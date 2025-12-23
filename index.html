@@ -3,53 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
-  <title>もちくまの仕事よけゲーム</title>
+  <title>もちくまの休日ハント</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+    body { background: #f0f0f0; overflow: hidden; font-family: sans-serif; user-select: none; touch-action: none; display: flex; justify-content: center; align-items: center; }
     
-    /* PCでの背景色（枠の外側） */
-    body { 
-      background: #f0f0f0; 
-      overflow: hidden; 
-      font-family: sans-serif; 
-      user-select: none; 
-      touch-action: none;
-      display: flex;
-      justify-content: center; /* 中央寄せ */
-      align-items: center;
-    }
-    
-    /* ゲーム画面：スマホサイズに固定 */
-    #game-wrap { 
-      width: 100vw; 
-      max-width: 450px; /* ここで横幅を制限（スマホサイズ） */
-      height: 100vh; 
-      height: 100dvh; 
-      position: relative; 
-      background: #eef6ff; 
-      display: flex; 
-      flex-direction: column; 
-      box-shadow: 0 0 20px rgba(0,0,0,0.1); /* 枠を少し浮き立たせる */
-    }
-    
-    #status { 
-      height: 60px; 
-      display: flex; 
-      justify-content: space-around; 
-      align-items: center; 
-      font-weight: bold; 
-      color: #666; 
-      background: #f5faff; 
-      border-bottom: 1px solid #dee7ef; 
-      z-index: 10; 
-    }
+    #game-wrap { width: 100vw; max-width: 450px; height: 100vh; height: 100dvh; position: relative; background: #eef6ff; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
+    #status { height: 60px; display: flex; justify-content: space-around; align-items: center; font-weight: bold; color: #666; background: #f5faff; border-bottom: 1px solid #dee7ef; z-index: 10; }
     #life { color: #ff6b6b; }
-    
-    #mute-btn {
-      position: absolute; top: 15px; right: 15px; width: 30px; height: 30px;
-      background: none; border: none; font-size: 1.5rem; cursor: pointer; z-index: 30; outline: none;
-    }
-
+    #mute-btn { position: absolute; top: 15px; right: 15px; width: 30px; height: 30px; background: none; border: none; font-size: 1.5rem; cursor: pointer; z-index: 30; outline: none; }
     #game-field { flex: 1; position: relative; overflow: hidden; width: 100%; }
     
     #mochikuma {
@@ -60,48 +22,21 @@
     #mochikuma.dodging { transform: translate3d(50%, 0, 0); }
     
     #countdown { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; font-weight: bold; color: #555; z-index: 15; }
-    .obj { position: absolute; left: 50%; top: 0; padding: 10px 20px; border-radius: 8px; font-weight: bold; white-space: nowrap; z-index: 4; transform: translate3d(-50%, -100px, 0); will-change: transform; }
+    .obj { position: absolute; left: 50%; top: 0; padding: 10px 15px; border-radius: 8px; font-weight: bold; white-space: nowrap; z-index: 4; transform: translate3d(-50%, -100px, 0); will-change: transform; }
+    
     .job { background: #555; color: #fff; }
     .rest { background: #ffeb3b; color: #333; }
     
-    #ui-area { 
-      height: 140px; 
-      display: flex; 
-      align-items: center; 
-      justify-content: center; 
-      background: #f5faff; 
-      border-top: 1px solid #dee7ef; 
-      z-index: 10;
-      padding-bottom: env(safe-area-inset-bottom);
-    }
-    
-    #dodge-btn { 
-      width: 70%; height: 80px; font-size: 1.8rem; font-weight: bold; 
-      background: #0056b3; border: none; border-radius: 40px; 
-      color: #ffffff; outline: none; box-shadow: 0 4px 0 #003d7a;
-    }
+    #ui-area { height: 140px; display: flex; align-items: center; justify-content: center; background: #f5faff; border-top: 1px solid #dee7ef; z-index: 10; padding-bottom: env(safe-area-inset-bottom); }
+    #dodge-btn { width: 70%; height: 80px; font-size: 1.8rem; font-weight: bold; background: #0056b3; border: none; border-radius: 40px; color: #ffffff; outline: none; box-shadow: 0 4px 0 #003d7a; }
     #dodge-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #003d7a; }
 
     #msg-layer, #rule-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; display: flex; justify-content: center; align-items: flex-start; padding-top: 60px; z-index: 20; }
     
     #msg-content { 
-      text-align: center; 
-      padding: 40px 30px; 
-      background-image: url('kumo.png');
-      background-size: 100% 100%;
-      background-repeat: no-repeat;
-      background-position: center;
-      background-color: transparent;
-      border: none;
-      width: 320px; 
-      height: 227px; 
-      display: flex;
-      flex-direction: column;
-      justify-content: center;
-      align-items: center;
-      box-shadow: none;
+      text-align: center; padding: 40px 30px; background-image: url('kumo.png'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center;
+      background-color: transparent; border: none; width: 320px; height: 227px; display: flex; flex-direction: column; justify-content: center; align-items: center; box-shadow: none;
     }
-
     #rule-content { text-align: center; padding: 25px; background: #fff; border: 1px solid #eee; border-radius: 12px; width: 85%; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
     #msg-text { font-size: 1.1rem; font-weight: bold; margin-bottom: 12px; color: #444; line-height: 1.4; }
     #start-btn, #rule-btn, #close-rule-btn { padding: 10px 20px; margin: 5px; font-size: 0.9rem; font-weight: bold; border-radius: 10px; border: 1px solid #ccc; background: #fff; }
@@ -129,7 +64,7 @@
     <div id="msg-content">
       <div id="loading-text">Now loading...</div>
       <div id="menu-area" style="display: none;">
-        <p id="msg-text">もちくまの仕事よけゲーム</p>
+        <p id="msg-text">もちくまの休日ハント</p>
         <div id="menu-btns">
           <button id="start-btn">開始</button>
           <button id="rule-btn">ルール</button>
@@ -140,10 +75,10 @@
   <div id="rule-layer" style="display: none;">
     <div id="rule-content">
       <h3>【ルール】</h3>
-      <p>・上から落ちてくる「仕事」を避ける</p>
-      <p>・「休み」は当たって取得する</p>
+      <p>・落ちてくる「現実」をよける</p>
+      <p>・「休日」は当たって勝ち取る</p>
       <p>・「よける」ボタン長押しで右移動</p>
-      <p>・「休み」を3回逃すと終了</p>
+      <p>・「休日」を3回逃すと終了</p>
       <button id="close-rule-btn">閉じる</button>
     </div>
   </div>
@@ -153,7 +88,6 @@
 </div>
 
 <script>
-// (JavaScript部分は変更なしのため維持)
 const mk = document.getElementById('mochikuma');
 const dodgeBtn = document.getElementById('dodge-btn');
 const msgLayer = document.getElementById('msg-layer');
@@ -178,6 +112,8 @@ const IMAGES = {
   HIT_REST: 'yasumi.png',
   KUMO: 'kumo.png'
 };
+
+const NEGATIVE_WORDS = ['仕事', '学校', '家事'];
 
 let state = { score: 0, life: 3, active: false, dodging: false, speed: 6, canStart: true, isMuted: false };
 let spawnTimer = null;
@@ -236,10 +172,8 @@ window.addEventListener('mouseup', endDodge);
 startBtn.addEventListener('click', () => { if(state.canStart) startSequence(); });
 
 function startSequence() {
-  bgm.volume = 0.2; 
-  bgm.currentTime = 0;
+  bgm.volume = 0.2; bgm.currentTime = 0;
   bgm.play().catch(e => console.log("再生失敗:", e));
-  
   state.canStart = false;
   msgLayer.style.display = 'none';
   setMochikumaImage(IMAGES.NORMAL);
@@ -268,11 +202,19 @@ function initGame() {
 function spawn() {
   if(!state.active) return;
   const obj = document.createElement('div');
-  const isJob = Math.random() > 0.4;
-  obj.className = `obj ${isJob ? 'job' : 'rest'}`;
-  obj.innerText = isJob ? '仕事' : '休み';
+  
+  // 確率 1:1 の設定 (Math.random() が 0.5 以上なら嫌なこと)
+  const isNegative = Math.random() > 0.5;
+  
+  if(isNegative) {
+    obj.className = 'obj job';
+    obj.innerText = NEGATIVE_WORDS[Math.floor(Math.random() * NEGATIVE_WORDS.length)];
+  } else {
+    obj.className = 'obj rest';
+    obj.innerText = '休日';
+  }
+  
   document.getElementById('game-field').appendChild(obj);
-
   let posY = -100;
   let hasChecked = false;
   const currentSpeed = Math.min(state.speed + (state.score / 25), 18);
@@ -281,22 +223,20 @@ function spawn() {
     if(!state.active) { clearInterval(loop); obj.remove(); return; }
     posY += currentSpeed;
     obj.style.transform = `translate3d(-50%, ${posY}px, 0)`;
-
     const objRect = obj.getBoundingClientRect();
     const mkRect = mk.getBoundingClientRect();
 
     if(!hasChecked && objRect.bottom > mkRect.top && objRect.top < mkRect.bottom) {
       if(!state.dodging) {
         hasChecked = true;
-        if(isJob) { endGame('job'); clearInterval(loop); }
+        if(isNegative) { endGame('job'); clearInterval(loop); }
         else { state.score += 10; scoreDisp.innerText = `SCORE: ${state.score}`; obj.remove(); clearInterval(loop); }
       }
     }
     if(!hasChecked && objRect.top > mkRect.bottom) {
       hasChecked = true;
-      if(!isJob) { 
-        state.life--; 
-        updateLife(); 
+      if(!isNegative) { 
+        state.life--; updateLife(); 
         if(state.life <= 0) { endGame('rest'); clearInterval(loop); } 
       }
     }
@@ -311,18 +251,16 @@ function updateLife() {
 }
 
 function endGame(reason) {
-  state.active = false;
-  bgm.pause();
+  state.active = false; bgm.pause();
   if (spawnTimer) clearTimeout(spawnTimer);
   document.querySelectorAll('.obj').forEach(o => o.remove());
   if(reason === 'job') {
     setMochikumaImage(IMAGES.HIT_JOB);
-    msgText.innerHTML = `仕事に当たってしまった…<br>SCORE: ${state.score}`;
+    msgText.innerHTML = `現実は甘くなかった…<br>SCORE: ${state.score}`;
   } else {
     setMochikumaImage(IMAGES.HIT_REST);
-    msgText.innerHTML = `休みが足りない…<br>SCORE: ${state.score}`;
+    msgText.innerHTML = `休日が足りない…<br>SCORE: ${state.score}`;
   }
-  
   startBtn.innerText = '再挑戦';
   msgLayer.style.display = 'flex';
   setTimeout(() => { state.canStart = true; }, 800);
