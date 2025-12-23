@@ -6,16 +6,30 @@
   <title>もちくまの仕事よけゲーム</title>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
-    body { background: #fff; overflow: hidden; font-family: sans-serif; user-select: none; touch-action: none; }
     
+    /* PCでの背景色（枠の外側） */
+    body { 
+      background: #f0f0f0; 
+      overflow: hidden; 
+      font-family: sans-serif; 
+      user-select: none; 
+      touch-action: none;
+      display: flex;
+      justify-content: center; /* 中央寄せ */
+      align-items: center;
+    }
+    
+    /* ゲーム画面：スマホサイズに固定 */
     #game-wrap { 
       width: 100vw; 
+      max-width: 450px; /* ここで横幅を制限（スマホサイズ） */
       height: 100vh; 
       height: 100dvh; 
       position: relative; 
       background: #eef6ff; 
       display: flex; 
       flex-direction: column; 
+      box-shadow: 0 0 20px rgba(0,0,0,0.1); /* 枠を少し浮き立たせる */
     }
     
     #status { 
@@ -68,9 +82,8 @@
     }
     #dodge-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #003d7a; }
 
-    #msg-layer, #rule-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; display: flex; justify-content: center; align-items: flex-start; padding-top: 80px; z-index: 20; }
+    #msg-layer, #rule-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; display: flex; justify-content: center; align-items: flex-start; padding-top: 60px; z-index: 20; }
     
-    /* 577x409の比率に合わせて調整 */
     #msg-content { 
       text-align: center; 
       padding: 40px 30px; 
@@ -80,8 +93,8 @@
       background-position: center;
       background-color: transparent;
       border: none;
-      width: 320px; /* iPhoneSE等の小型端末も考慮した幅 */
-      height: 227px; /* 320px に対する 577:409 の比率計算値 */
+      width: 320px; 
+      height: 227px; 
       display: flex;
       flex-direction: column;
       justify-content: center;
@@ -140,6 +153,7 @@
 </div>
 
 <script>
+// (JavaScript部分は変更なしのため維持)
 const mk = document.getElementById('mochikuma');
 const dodgeBtn = document.getElementById('dodge-btn');
 const msgLayer = document.getElementById('msg-layer');
@@ -243,11 +257,9 @@ function startSequence() {
 function initGame() {
   if (spawnTimer) clearTimeout(spawnTimer);
   document.querySelectorAll('.obj').forEach(o => o.remove());
-  
   state = { ...state, score: 0, life: 3, active: true, dodging: false, speed: 6, canStart: false };
   mk.classList.remove('dodging'); 
   setMochikumaImage(IMAGES.NORMAL);
-  
   scoreDisp.innerText = `SCORE: 0`;
   updateLife();
   spawn();
