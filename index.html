@@ -7,7 +7,16 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body { background: #fff; overflow: hidden; font-family: sans-serif; user-select: none; touch-action: none; }
-    #game-wrap { width: 100vw; height: 100vh; position: relative; background: #fafafa; display: flex; flex-direction: column; }
+    #game-wrap { 
+  width: 100vw; 
+  /* 以下の2行を修正・追加 */
+  height: 100vh; 
+  height: 100dvh; /* 動的な画面高さを取得する最新の単位 */
+  position: relative; 
+  background: #fafafa; 
+  display: flex; 
+  flex-direction: column; 
+}
     #status { height: 60px; display: flex; justify-content: space-around; align-items: center; font-weight: bold; color: #666; background: #fff; border-bottom: 1px solid #eee; z-index: 10; }
     #life { color: #ff6b6b; }
     #game-field { flex: 1; position: relative; overflow: hidden; width: 100%; }
@@ -233,4 +242,5 @@ function endGame(reason) {
 }
 </script>
 </body>
+
 </html>
