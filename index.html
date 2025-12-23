@@ -7,55 +7,48 @@
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body { background: #fff; overflow: hidden; font-family: sans-serif; user-select: none; touch-action: none; }
-    
-    /* レイアウト構成：上（ステータス）中（ゲーム）下（操作ボタン） */
     #game-wrap { width: 100vw; height: 100vh; position: relative; background: #fafafa; display: flex; flex-direction: column; }
     
-    /* 1. 上部ステータスバー（常に表示） */
-    #status { height: 60px; display: flex; justify-content: space-around; align-items: center; font-weight: bold; color: #666; background: #fff; border-bottom: 1px solid #eee; z-index: 30; }
+    /* 上部ステータス */
+    #status { height: 60px; display: flex; justify-content: space-around; align-items: center; font-weight: bold; color: #666; background: #fff; border-bottom: 1px solid #eee; z-index: 10; }
     #life { color: #ff6b6b; }
     
-    /* 2. 中央ゲームフィールド */
-    #game-field { flex: 1; position: relative; overflow: hidden; width: 100%; z-index: 5; }
+    /* ゲームフィールド */
+    #game-field { flex: 1; position: relative; overflow: hidden; width: 100%; }
     
-    /* もちくまコンテナ */
+    /* もちくま：4枚の画像を重ねて、透明度(opacity)で切り替える方式 */
     #mochikuma-wrap {
       width: 120px; height: 120px; position: absolute; bottom: 40px; left: 50%;
       transform: translate3d(-50%, 0, 0);
-      transition: transform 0.08s ease-out;
-      z-index: 10; will-change: transform;
+      transition: transform 0.1s ease-out;
+      z-index: 5; will-change: transform;
     }
     #mochikuma-wrap.dodging { transform: translate3d(50%, 0, 0); }
     
-    /* 画像を実体(img)として重ねる：背景画像よりスマホで安定します */
     .mk-img {
       position: absolute; top: 0; left: 0; width: 100%; height: 100%;
       object-fit: contain;
-      display: none; /* 基本は消しておく */
+      opacity: 0; /* 基本は隠す */
     }
-    .active { display: block !important; } /* activeクラスがついたものだけ表示 */
+    .active { opacity: 1 !important; } /* これがついた画像だけ見える */
 
     /* 落ちてくるオブジェクト */
-    .obj { position: absolute; left: 50%; top: 0; padding: 10px 20px; border-radius: 8px; font-weight: bold; white-space: nowrap; z-index: 8; transform: translate3d(-50%, -100px, 0); will-change: transform; }
+    .obj { position: absolute; left: 50%; top: 0; padding: 10px 20px; border-radius: 8px; font-weight: bold; white-space: nowrap; z-index: 4; transform: translate3d(-50%, -100px, 0); will-change: transform; }
     .job { background: #555; color: #fff; }
     .rest { background: #ffeb3b; color: #333; }
     
-    /* 3. 下部操作エリア */
-    #ui-area { height: 140px; display: flex; align-items: center; justify-content: center; background: #fff; border-top: 1px solid #eee; z-index: 30; }
+    /* 操作エリア */
+    #ui-area { height: 140px; display: flex; align-items: center; justify-content: center; background: #fff; border-top: 1px solid #eee; z-index: 10; }
     #dodge-btn { width: 80%; height: 70px; font-size: 1.5rem; font-weight: bold; background: #eee; border: 2px solid #ccc; border-radius: 15px; color: #555; outline: none; }
     
-    /* ポップアップメッセージ（スコアを隠さないよう中央に配置） */
-    #msg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; z-index: 50; background: rgba(0,0,0,0.05); }
-    #msg-content { text-align: center; padding: 25px; background: #fff; border-radius: 15px; width: 85%; box-shadow: 0 5px 20px rgba(0,0,0,0.2); }
-    #msg-text { font-size: 1.2rem; font-weight: bold; margin-bottom: 20px; color: #444; line-height: 1.5; }
-    #start-btn, #rule-btn { padding: 12px 25px; margin: 5px; font-size: 1rem; font-weight: bold; border-radius: 10px; border: 1px solid #ccc; background: #eee; }
-    
-    #loading-screen { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: #fff; display: flex; justify-content: center; align-items: center; z-index: 100; }
+    /* ポップアップ */
+    #msg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.1); display: flex; justify-content: center; align-items: center; z-index: 20; }
+    #msg-content { text-align: center; padding: 25px; background: #fff; border-radius: 12px; width: 85%; box-shadow: 0 10px 30px rgba(0,0,0,0.2); }
+    #msg-text { font-size: 1.2rem; font-weight: bold; margin-bottom: 20px; color: #444; }
+    #start-btn { padding: 12px 30px; font-size: 1rem; font-weight: bold; border-radius: 10px; border: 1px solid #ccc; background: #eee; }
   </style>
 </head>
 <body>
-
-<div id="loading-screen">読み込み中...</div>
 
 <div id="game-wrap">
   <div id="status">
@@ -76,7 +69,6 @@
     <div id="msg-content">
       <p id="msg-text">もちくま、避ける。</p>
       <button id="start-btn">開始</button>
-      <button id="rule-btn">ルール</button>
     </div>
   </div>
 
@@ -100,21 +92,7 @@ const lifeDisp = document.getElementById('life');
 
 let state = { score: 0, life: 3, active: false, dodging: false, speed: 6 };
 
-// 画像をセットし、ロード完了を確認
-function init() {
-  const allImgs = document.querySelectorAll('.mk-img');
-  let loaded = 0;
-  allImgs.forEach(img => {
-    if (img.complete) loaded++;
-    else img.onload = () => { loaded++; if(loaded === 4) hideLoader(); };
-  });
-  if (loaded === 4) hideLoader();
-}
-function hideLoader() {
-  document.getElementById('loading-screen').style.display = 'none';
-}
-init();
-
+// ポーズ変更（すべての画像タグを最初からHTMLに埋め込んでいるので、瞬時に切り替わります）
 function setPose(key) {
   Object.values(imgs).forEach(i => i.classList.remove('active'));
   imgs[key].classList.add('active');
@@ -137,6 +115,8 @@ const endDodge = (e) => {
 const btn = document.getElementById('dodge-btn');
 btn.addEventListener('touchstart', startDodge, {passive: false});
 btn.addEventListener('touchend', endDodge);
+btn.addEventListener('mousedown', startDodge);
+btn.addEventListener('mouseup', endDodge);
 
 document.getElementById('start-btn').addEventListener('click', () => {
   msgLayer.style.display = 'none';
@@ -185,7 +165,7 @@ function spawn() {
         }
       }
     }
-    if(posY > 1000) {
+    if(posY > document.getElementById('game-field').clientHeight + 50) {
       if(!isJob && !state.dodging) {
         state.life--;
         lifeDisp.innerText = `LIFE: ${'❤'.repeat(Math.max(0, state.life))}${'♡'.repeat(Math.max(0, 3-state.life))}`;
@@ -200,12 +180,8 @@ function spawn() {
       obj.remove(); clearInterval(loop);
     }
   }, 16);
-  setTimeout(spawn, Math.max(1500 - (state.score * 5), 600));
+  setTimeout(spawn, 1500);
 }
-
-document.getElementById('rule-btn').addEventListener('click', () => {
-  alert("・仕事は避ける\n・休みは体で取る\n・ボタン長押しで右へ回避");
-});
 </script>
 </body>
 </html>
