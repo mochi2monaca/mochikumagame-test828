@@ -69,8 +69,28 @@
     #dodge-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #003d7a; }
 
     #msg-layer, #rule-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; display: flex; justify-content: center; align-items: flex-start; padding-top: 60px; z-index: 20; }
-    #msg-content, #rule-content { text-align: center; padding: 25px; background: #fff; border: 1px solid #eee; border-radius: 12px; width: 85%; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
-    #msg-text { font-size: 1.3rem; font-weight: bold; margin-bottom: 20px; color: #444; }
+    
+    /* 中央ダイアログ：kumo.png を背景に設定 */
+    #msg-content { 
+      text-align: center; 
+      padding: 60px 40px; /* 雲の中に収まるよう余白を多めに設定 */
+      background-image: url('kumo.png');
+      background-size: contain;
+      background-repeat: no-repeat;
+      background-position: center;
+      background-color: transparent; /* 白背景を消去 */
+      border: none; /* 枠線を消去 */
+      width: 90%; 
+      min-height: 300px;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      box-shadow: none; /* 影を消去 */
+    }
+
+    #rule-content { text-align: center; padding: 25px; background: #fff; border: 1px solid #eee; border-radius: 12px; width: 85%; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
+    #msg-text { font-size: 1.2rem; font-weight: bold; margin-bottom: 15px; color: #444; line-height: 1.4; }
     #start-btn, #rule-btn, #close-rule-btn { padding: 12px 25px; margin: 8px; font-size: 1rem; font-weight: bold; border-radius: 10px; border: 1px solid #ccc; background: #fff; }
     #start-btn { background: #eee; }
     #rule-content p { font-size: 0.95rem; margin-bottom: 10px; text-align: left; line-height: 1.5; color: #444; }
@@ -141,7 +161,8 @@ const IMAGES = {
   NORMAL: 'default.png',
   DODGE:  'yoke.png',
   HIT_JOB: 'shigoto.png',
-  HIT_REST: 'yasumi.png'
+  HIT_REST: 'yasumi.png',
+  KUMO: 'kumo.png' // プリロードに追加
 };
 
 let state = { score: 0, life: 3, active: false, dodging: false, speed: 6, canStart: true, isMuted: false };
@@ -196,7 +217,6 @@ const endDodge = (e) => {
 dodgeBtn.addEventListener('touchstart', startDodge, {passive: false});
 dodgeBtn.addEventListener('touchend', endDodge, {passive: false});
 dodgeBtn.addEventListener('mousedown', startDodge);
-// 画面のどこで離しても状態がリセットされるようにwindow全体で監視
 window.addEventListener('mouseup', endDodge);
 
 startBtn.addEventListener('click', () => { if(state.canStart) startSequence(); });
@@ -224,7 +244,6 @@ function initGame() {
   if (spawnTimer) clearTimeout(spawnTimer);
   document.querySelectorAll('.obj').forEach(o => o.remove());
   
-  // バグ修正点：ゲーム開始時に回避状態を強制リセット
   state = { ...state, score: 0, life: 3, active: true, dodging: false, speed: 6, canStart: false };
   mk.classList.remove('dodging'); 
   setMochikumaImage(IMAGES.NORMAL);
