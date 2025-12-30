@@ -15,35 +15,18 @@
     #game-field { flex: 1; position: relative; overflow: hidden; width: 100%; }
     
     #mochikuma {
-      width: 120px; 
-      height: 132px; 
-      position: absolute; 
-      bottom: 40px; 
-      left: 50%;
-      transform: translate3d(-50%, 0, 0); 
-      background-size: contain; 
-      background-repeat: no-repeat;
-      background-position: center bottom; 
-      transition: transform 0.1s ease-out; 
-      z-index: 5; 
-      will-change: transform;
+      width: 120px; height: 132px; position: absolute; bottom: 40px; left: 50%;
+      transform: translate3d(-50%, 0, 0); background-size: contain; background-repeat: no-repeat;
+      background-position: center bottom; transition: transform 0.1s ease-out; z-index: 5; will-change: transform;
     }
     #mochikuma.dodging { transform: translate3d(50%, 0, 0); }
     
     #countdown { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; font-weight: bold; color: #555; z-index: 15; }
     
     .obj { 
-      position: absolute; 
-      left: 50%; 
-      top: 0; 
-      width: 80px; 
-      height: 80px; 
-      background-size: contain; 
-      background-repeat: no-repeat; 
-      background-position: center;
-      z-index: 4; 
-      transform: translate3d(-50%, -100px, 0); 
-      will-change: transform; 
+      position: absolute; left: 50%; top: 0; width: 80px; height: 80px; 
+      background-size: contain; background-repeat: no-repeat; background-position: center;
+      z-index: 4; transform: translate3d(-50%, -100px, 0); will-change: transform; 
     }
     
     #ui-area { height: 140px; display: flex; align-items: center; justify-content: center; background: #f5faff; border-top: 1px solid #dee7ef; z-index: 10; padding-bottom: env(safe-area-inset-bottom); }
@@ -280,9 +263,9 @@ function spawn() {
           state.score += 10; 
           scoreDisp.innerText = `SCORE: ${state.score}`; 
           
-          // 効果音再生
+          // 効果音再生 (音量を0.15に調整)
           getSe.currentTime = 0;
-          getSe.volume = 0.4;
+          getSe.volume = 0.15;
           getSe.play().catch(e => {});
 
           obj.remove(); 
