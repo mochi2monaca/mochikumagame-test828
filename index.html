@@ -140,4 +140,185 @@ const IMAGES = {
 };
 
 const NEGATIVE_TYPES = [
-  { img: IMAGES.SIGOTO, goImg: IMAGES.GO_
+  { img: IMAGES.SIGOTO, goImg: IMAGES.GO_SIGOTO, name: "仕事" },
+  { img: IMAGES.KAZI, goImg: IMAGES.GO_KAZI, name: "家事" },
+  { img: IMAGES.GAKKOU, goImg: IMAGES.GO_GAKKOU, name: "学校" }
+];
+
+let state = { score: 0, life: 3, active: false, dodging: false, speed: 6, canStart: true, isMuted: false };
+let spawnTimer = null;
+
+muteBtn.addEventListener('click', () => {
+  state.isMuted = !state.isMuted;
+  bgm.muted = state.isMuted;
+  muteBtn.innerText = state.isMuted ? '🔇' : '🔊';
+});
+
+function preloadAllImages(imageObj, callback) {
+  const urls = Object.values(imageObj);
+  let loadedCount = 0;
+  urls.forEach(url => {
+    const img = new Image();
+    img.onload = img.onerror = () => { 
+      loadedCount++; 
+      const cacheImg = img.cloneNode();
+      preloader.appendChild(cacheImg);
+      if (loadedCount === urls.length) callback(); 
+    };
+    img.src = url;
+  });
+}
+
+preloadAllImages(IMAGES, () => {
+  loadingText.style.display = 'none';
+  menuArea.style.display = 'block';
+  setMochikumaImage(IMAGES.NORMAL);
+});
+
+function setMochikumaImage(url) { mk.style.backgroundImage = `url('${url}')`; }
+
+ruleBtn.addEventListener('click', () => ruleLayer.style.display = 'flex');
+closeRuleBtn.addEventListener('click', () => ruleLayer.style.display = 'none');
+
+const startDodge = (e) => { 
+  if (e.cancelable) e.preventDefault();
+  if(!state.active) return; 
+  state.dodging = true; 
+  mk.classList.add('dodging'); 
+  setMochikumaImage(IMAGES.DODGE);
+};
+const endDodge = (e) => { 
+  if (e.cancelable) e.preventDefault();
+  state.dodging = false; 
+  mk.classList.remove('dodging'); 
+  if(state.active) setMochikumaImage(IMAGES.NORMAL);
+};
+
+dodgeBtn.addEventListener('touchstart', startDodge, {passive: false});
+dodgeBtn.addEventListener('touchend', endDodge, {passive: false});
+dodgeBtn.addEventListener('mousedown', startDodge);
+window.addEventListener('mouseup', endDodge);
+
+startBtn.addEventListener('click', () => { if(state.canStart) startSequence(); });
+
+function startSequence() {
+  bgm.volume = 0.2; bgm.currentTime = 0;
+  bgm.play().catch(e => console.log("再生失敗:", e));
+  state.canStart = false;
+  msgLayer.style.display = 'none';
+  setMochikumaImage(IMAGES.NORMAL);
+  countdownDisp.style.display = 'block';
+  countdownDisp.innerText = 'Ready';
+  setTimeout(() => {
+    countdownDisp.innerText = 'Go!';
+    setTimeout(() => {
+      countdownDisp.style.display = 'none';
+      initGame();
+    }, 800);
+  }, 1000);
+}
+
+function initGame() {
+  if (spawnTimer) clearTimeout(spawnTimer);
+  document.querySelectorAll('.obj').forEach(o => o.remove());
+  state = { ...state, score: 0, life: 3, active: true, dodging: false, speed: 6, canStart: false };
+  mk.classList.remove('dodging'); 
+  setMochikumaImage(IMAGES.NORMAL);
+  scoreDisp.innerText = `SCORE: 0`;
+  updateLife();
+  spawn();
+}
+
+function spawn() {
+  if(!state.active) return;
+  const obj = document.createElement('div');
+  obj.className = 'obj';
+  const isNegative = Math.random() > 0.5;
+  
+  let currentObj = null;
+  if(isNegative) {
+    currentObj = NEGATIVE_TYPES[Math.floor(Math.random() * NEGATIVE_TYPES.length)];
+    obj.style.backgroundImage = `url('${currentObj.img}')`;
+  } else {
+    obj.style.backgroundImage = `url('${IMAGES.KYUZITU}')`;
+  }
+  
+  document.getElementById('game-field').appendChild(obj);
+
+  let posY = -100;
+  let hasChecked = false;
+  const currentSpeed = Math.min(state.speed + (state.score / 25), 18);
+
+  const loop = setInterval(() => {
+    if(!state.active) { clearInterval(loop); obj.remove(); return; }
+    posY += currentSpeed;
+    obj.style.transform = `translate3d(-50%, ${posY}px, 0)`;
+    
+    const objRect = obj.getBoundingClientRect();
+    const mkRect = mk.getBoundingClientRect();
+
+    const mkHitLeft = mkRect.left + (mkRect.width * 0.2);
+    const mkHitRight = mkRect.right - (mkRect.width * 0.2);
+    const mkHitTop = mkRect.top + (mkRect.height * 0.2);
+    
+    const isOverlapping = (
+      objRect.right > mkHitLeft &&
+      objRect.left < mkHitRight &&
+      objRect.bottom > mkHitTop &&
+      objRect.top < mkRect.bottom
+    );
+
+    if(!hasChecked && isOverlapping) {
+      if(!state.dodging) {
+        hasChecked = true;
+        if(isNegative) { 
+          // 当たったオブジェクトに応じた画像を渡す
+          endGame(currentObj.goImg, currentObj.name); 
+          clearInterval(loop); 
+        } else { 
+          state.score += 10; 
+          scoreDisp.innerText = `SCORE: ${state.score}`; 
+          obj.remove(); 
+          clearInterval(loop); 
+        }
+      }
+    }
+    
+    if(!hasChecked && objRect.top > mkRect.bottom) {
+      hasChecked = true;
+      if(!isNegative) { 
+        state.life--; updateLife(); 
+        if(state.life <= 0) { endGame(IMAGES.HIT_REST, '休日'); clearInterval(loop); } 
+      }
+    }
+    
+    if(posY > document.getElementById('game-field').clientHeight + 150) { obj.remove(); clearInterval(loop); }
+  }, 16);
+  spawnTimer = setTimeout(spawn, Math.max(1800 - (state.score * 12), 550));
+}
+
+function updateLife() {
+  const currentLife = Math.max(0, state.life);
+  lifeDisp.innerText = `LIFE: ${'❤'.repeat(currentLife)}${'♡'.repeat(3 - currentLife)}`;
+}
+
+function endGame(gameOverImg, typeName) {
+  state.active = false; bgm.pause();
+  if (spawnTimer) clearTimeout(spawnTimer);
+  document.querySelectorAll('.obj').forEach(o => o.remove());
+  
+  setMochikumaImage(gameOverImg);
+  
+  if(typeName === '休日') {
+    msgText.innerHTML = `休日が足りない…<br>SCORE: ${state.score}`;
+  } else {
+    msgText.innerHTML = `${typeName}には勝てなかった…<br>SCORE: ${state.score}`;
+  }
+  
+  startBtn.innerText = '再挑戦';
+  msgLayer.style.display = 'flex';
+  setTimeout(() => { state.canStart = true; }, 800);
+}
+</script>
+</body>
+</html>
