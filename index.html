@@ -15,7 +15,6 @@
     #game-field { flex: 1; position: relative; overflow: hidden; width: 100%; }
     
     #mochikuma {
-      /* 横幅を120pxに固定。高さは一番高い画像(330px)の比率に合わせて132pxに設定 */
       width: 120px; 
       height: 132px; 
       position: absolute; 
@@ -24,7 +23,6 @@
       transform: translate3d(-50%, 0, 0); 
       background-size: contain; 
       background-repeat: no-repeat;
-      /* ここで下揃えに設定 */
       background-position: center bottom; 
       transition: transform 0.1s ease-out; 
       z-index: 5; 
@@ -129,7 +127,7 @@ const muteBtn = document.getElementById('mute-btn');
 const IMAGES = {
   NORMAL: 'default.png',
   DODGE:  'yoke.png',
-  HIT_JOB: 'gameover-shigoto.png', // ファイル名変更
+  HIT_JOB: 'gameover-shigoto.png',
   HIT_REST: 'yasumi.png',
   KUMO: 'kumo.png',
   SIGOTO: 'sigoto.png',
@@ -242,16 +240,33 @@ function spawn() {
     if(!state.active) { clearInterval(loop); obj.remove(); return; }
     posY += currentSpeed;
     obj.style.transform = `translate3d(-50%, ${posY}px, 0)`;
+    
     const objRect = obj.getBoundingClientRect();
     const mkRect = mk.getBoundingClientRect();
 
-    if(!hasChecked && objRect.bottom > mkRect.top && objRect.top < mkRect.bottom) {
+    // --- 当たり判定のカスタマイズ ---
+    // もちくまの左右20%を無視し、中央60%のみを判定
+    const mkHitLeft = mkRect.left + (mkRect.width * 0.2);
+    const mkHitRight = mkRect.right - (mkRect.width * 0.2);
+    // 上下も少し余裕を持たせる（上20%を無視）
+    const mkHitTop = mkRect.top + (mkRect.height * 0.2);
+    
+    const isOverlapping = (
+      objRect.right > mkHitLeft &&
+      objRect.left < mkHitRight &&
+      objRect.bottom > mkHitTop &&
+      objRect.top < mkRect.bottom
+    );
+
+    if(!hasChecked && isOverlapping) {
       if(!state.dodging) {
         hasChecked = true;
         if(isNegative) { endGame('job'); clearInterval(loop); }
         else { state.score += 10; scoreDisp.innerText = `SCORE: ${state.score}`; obj.remove(); clearInterval(loop); }
       }
     }
+    
+    // 画面外に逃した判定
     if(!hasChecked && objRect.top > mkRect.bottom) {
       hasChecked = true;
       if(!isNegative) { 
@@ -259,6 +274,7 @@ function spawn() {
         if(state.life <= 0) { endGame('rest'); clearInterval(loop); } 
       }
     }
+    
     if(posY > document.getElementById('game-field').clientHeight + 150) { obj.remove(); clearInterval(loop); }
   }, 16);
   spawnTimer = setTimeout(spawn, Math.max(1800 - (state.score * 12), 550));
