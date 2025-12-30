@@ -43,7 +43,6 @@
     #msg-text { font-size: 1.1rem; font-weight: bold; margin-bottom: 12px; color: #444; line-height: 1.4; }
     #start-btn, #rule-btn, #close-rule-btn, #share-btn { padding: 10px 20px; margin: 5px; font-size: 0.9rem; font-weight: bold; border-radius: 10px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
     #start-btn { background: #eee; }
-    /* シェアボタンのスタイル */
     #share-btn { background: #000; color: #fff; border: none; display: none; }
     #rule-content p { font-size: 0.95rem; margin-bottom: 10px; text-align: left; line-height: 1.5; color: #444; }
     #loading-text { font-weight: bold; color: #aaa; padding: 30px; letter-spacing: 0.05em; }
@@ -53,7 +52,6 @@
 <body>
 <div id="preloader"></div>
 <audio id="bgm" src="bgm.mp3" loop></audio>
-<audio id="get-se" src="get.mp3"></audio>
 
 <div id="game-wrap">
   <button id="mute-btn">🔊</button>
@@ -110,8 +108,35 @@ const loadingText = document.getElementById('loading-text');
 const menuArea = document.getElementById('menu-area');
 const preloader = document.getElementById('preloader');
 const bgm = document.getElementById('bgm');
-const getSe = document.getElementById('get-se');
 const muteBtn = document.getElementById('mute-btn');
+
+// --- 低遅延オーディオ設定 ---
+const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+let getSoundBuffer = null;
+
+async function loadGetSound() {
+  try {
+    const response = await fetch('get.mp3');
+    const arrayBuffer = await response.arrayBuffer();
+    getSoundBuffer = await audioCtx.decodeAudioData(arrayBuffer);
+  } catch (e) {
+    console.error("効果音の読み込みに失敗しました:", e);
+  }
+}
+
+function playGetSound() {
+  if (!getSoundBuffer || state.isMuted) return;
+  // ブラウザの制限解除
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  
+  const source = audioCtx.createBufferSource();
+  const gainNode = audioCtx.createGain();
+  source.buffer = getSoundBuffer;
+  gainNode.gain.value = 0.15; // 音量調整
+  source.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  source.start(0);
+}
 
 const IMAGES = {
   NORMAL: 'default.png',
@@ -139,7 +164,6 @@ let spawnTimer = null;
 muteBtn.addEventListener('click', () => {
   state.isMuted = !state.isMuted;
   bgm.muted = state.isMuted;
-  getSe.muted = state.isMuted;
   muteBtn.innerText = state.isMuted ? '🔇' : '🔊';
 });
 
@@ -158,7 +182,11 @@ function preloadAllImages(imageObj, callback) {
   });
 }
 
-preloadAllImages(IMAGES, () => {
+// 画像と音声を両方読み込んでから開始
+Promise.all([
+  new Promise(res => preloadAllImages(IMAGES, res)),
+  loadGetSound()
+]).then(() => {
   loadingText.style.display = 'none';
   menuArea.style.display = 'block';
   setMochikumaImage(IMAGES.NORMAL);
@@ -188,9 +216,13 @@ dodgeBtn.addEventListener('touchend', endDodge, {passive: false});
 dodgeBtn.addEventListener('mousedown', startDodge);
 window.addEventListener('mouseup', endDodge);
 
-startBtn.addEventListener('click', () => { if(state.canStart) startSequence(); });
+startBtn.addEventListener('click', () => { 
+  if(state.canStart) {
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+    startSequence(); 
+  }
+});
 
-// シェアボタンのクリックイベント
 shareBtn.addEventListener('click', () => {
   const text = encodeURIComponent(`「もちくまの休日ハント」で遊んだよ！\n今回のスコアは【${state.score}】でした！\n\n#もちくま #もちくまの休日ハント`);
   const url = encodeURIComponent(window.location.href);
@@ -202,7 +234,7 @@ function startSequence() {
   bgm.play().catch(e => console.log("再生失敗:", e));
   state.canStart = false;
   msgLayer.style.display = 'none';
-  shareBtn.style.display = 'none'; // 開始時は非表示
+  shareBtn.style.display = 'none';
   setMochikumaImage(IMAGES.NORMAL);
   countdownDisp.style.display = 'block';
   countdownDisp.innerText = 'Ready';
@@ -275,9 +307,8 @@ function spawn() {
           state.score += 10; 
           scoreDisp.innerText = `SCORE: ${state.score}`; 
           
-          getSe.currentTime = 0;
-          getSe.volume = 0.15;
-          getSe.play().catch(e => {});
+          // 低遅延サウンド再生
+          playGetSound();
 
           obj.remove(); 
           clearInterval(loop); 
@@ -307,17 +338,14 @@ function endGame(gameOverImg, typeName) {
   state.active = false; bgm.pause();
   if (spawnTimer) clearTimeout(spawnTimer);
   document.querySelectorAll('.obj').forEach(o => o.remove());
-  
   setMochikumaImage(gameOverImg);
-  
   if(typeName === '休日') {
     msgText.innerHTML = `休日が足りない…<br>SCORE: ${state.score}`;
   } else {
     msgText.innerHTML = `${typeName}には勝てなかった…<br>SCORE: ${state.score}`;
   }
-  
   startBtn.innerText = '再挑戦';
-  shareBtn.style.display = 'inline-block'; // ゲームオーバー時に表示
+  shareBtn.style.display = 'inline-block';
   msgLayer.style.display = 'flex';
   setTimeout(() => { state.canStart = true; }, 800);
 }
