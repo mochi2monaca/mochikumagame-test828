@@ -94,7 +94,7 @@ const muteBtn = document.getElementById('mute-btn');
 
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 
-// --- 音声管理 (Web Audio APIに統一) ---
+// --- 音声管理 ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
 let bgmBuffer = null;
 let getSoundBuffer = null;
@@ -107,9 +107,8 @@ async function loadAudio(url) {
   return await audioCtx.decodeAudioData(arrayBuffer);
 }
 
-// BGMの再生管理
 function playBGM() {
-  if (bgmSource) bgmSource.stop();
+  if (bgmSource) { bgmSource.stop(); bgmSource = null; }
   bgmSource = audioCtx.createBufferSource();
   bgmSource.buffer = bgmBuffer;
   bgmSource.loop = true;
@@ -121,7 +120,10 @@ function playBGM() {
 }
 
 function stopBGM() {
-  if (bgmSource) { bgmSource.stop(); bgmSource = null; }
+  if (bgmSource) {
+    try { bgmSource.stop(); } catch(e) {}
+    bgmSource = null;
+  }
 }
 
 function playGetSound() {
@@ -135,7 +137,6 @@ function playGetSound() {
   source.start(audioCtx.currentTime);
 }
 
-// --- 画面オフ時の再生防止 ---
 document.addEventListener('visibilitychange', () => {
   if (document.visibilityState === 'hidden') {
     if (audioCtx.state !== 'closed') audioCtx.suspend();
@@ -181,7 +182,6 @@ function preloadAllImages(imageObj, callback) {
   });
 }
 
-// 全資産の読み込み
 Promise.all([
   new Promise(res => preloadAllImages(IMAGES, res)),
   loadAudio('bgm.mp3').then(b => bgmBuffer = b),
@@ -232,6 +232,12 @@ shareBtn.addEventListener('click', () => {
 
 function startSequence() {
   state.canStart = false;
+  // ボタンを押した瞬間にリセットを表示に反映
+  state.score = 0;
+  state.life = 3;
+  scoreDisp.innerText = `SCORE: 0`;
+  updateLife();
+  
   msgLayer.style.display = 'none';
   shareBtn.style.display = 'none';
   setMochikumaImage(IMAGES.NORMAL);
@@ -240,7 +246,7 @@ function startSequence() {
   
   setTimeout(() => {
     countdownDisp.innerText = 'Go!';
-    playBGM(); // ここでBGM開始
+    playBGM();
     setTimeout(() => {
       countdownDisp.style.display = 'none';
       initGame();
@@ -251,11 +257,11 @@ function startSequence() {
 function initGame() {
   if (spawnTimer) clearTimeout(spawnTimer);
   document.querySelectorAll('.obj').forEach(o => o.remove());
-  state = { ...state, score: 0, life: 3, active: true, dodging: false, speed: 6, canStart: false };
+  state.active = true;
+  state.dodging = false;
+  state.speed = 6;
   mk.classList.remove('dodging'); 
   setMochikumaImage(IMAGES.NORMAL);
-  scoreDisp.innerText = `SCORE: 0`;
-  updateLife();
   spawn();
 }
 
@@ -330,7 +336,7 @@ function updateLife() {
 
 function endGame(gameOverImg, typeName) {
   state.active = false; 
-  stopBGM(); // BGM停止
+  stopBGM();
   if (spawnTimer) clearTimeout(spawnTimer);
   document.querySelectorAll('.obj').forEach(o => o.remove());
   setMochikumaImage(gameOverImg);
