@@ -110,7 +110,7 @@ const preloader = document.getElementById('preloader');
 const bgm = document.getElementById('bgm');
 const muteBtn = document.getElementById('mute-btn');
 
-// --- 低遅延オーディオ設定 ---
+// --- 低遅延オーディオ設定（スマホ最適化） ---
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
 let getSoundBuffer = null;
 
@@ -120,19 +120,20 @@ async function loadGetSound() {
     const arrayBuffer = await response.arrayBuffer();
     getSoundBuffer = await audioCtx.decodeAudioData(arrayBuffer);
   } catch (e) {
-    console.error("効果音の読み込みに失敗しました:", e);
+    console.error("効果音の読み込みに失敗:", e);
   }
 }
 
 function playGetSound() {
   if (!getSoundBuffer || state.isMuted) return;
-  // ブラウザの制限解除
+  
+  // スマホの待機状態を解除
   if (audioCtx.state === 'suspended') audioCtx.resume();
   
   const source = audioCtx.createBufferSource();
   const gainNode = audioCtx.createGain();
   source.buffer = getSoundBuffer;
-  gainNode.gain.value = 0.15; // 音量調整
+  gainNode.gain.value = 0.45; // スマホ用に少し音量をアップ
   source.connect(gainNode);
   gainNode.connect(audioCtx.destination);
   source.start(0);
@@ -165,6 +166,7 @@ muteBtn.addEventListener('click', () => {
   state.isMuted = !state.isMuted;
   bgm.muted = state.isMuted;
   muteBtn.innerText = state.isMuted ? '🔇' : '🔊';
+  if (audioCtx.state === 'suspended') audioCtx.resume();
 });
 
 function preloadAllImages(imageObj, callback) {
@@ -182,7 +184,6 @@ function preloadAllImages(imageObj, callback) {
   });
 }
 
-// 画像と音声を両方読み込んでから開始
 Promise.all([
   new Promise(res => preloadAllImages(IMAGES, res)),
   loadGetSound()
@@ -199,6 +200,7 @@ closeRuleBtn.addEventListener('click', () => ruleLayer.style.display = 'none');
 
 const startDodge = (e) => { 
   if (e.cancelable) e.preventDefault();
+  if (audioCtx.state === 'suspended') audioCtx.resume(); // 操作時に解除
   if(!state.active) return; 
   state.dodging = true; 
   mk.classList.add('dodging'); 
@@ -224,7 +226,7 @@ startBtn.addEventListener('click', () => {
 });
 
 shareBtn.addEventListener('click', () => {
-  const text = encodeURIComponent(`「もちくまの休日ハント」で遊んだよ！\n今回のスコアは【${state.score}】でした！\n\n#もちくま #もちくまの休日ハント`);
+  const text = encodeURIComponent(`「もちくまの休日ハント」で遊んだよ！\nスコアは【${state.score}】でした！\n\n#もちくま #もちくまの休日ハント`);
   const url = encodeURIComponent(window.location.href);
   window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
 });
@@ -306,10 +308,7 @@ function spawn() {
         } else { 
           state.score += 10; 
           scoreDisp.innerText = `SCORE: ${state.score}`; 
-          
-          // 低遅延サウンド再生
           playGetSound();
-
           obj.remove(); 
           clearInterval(loop); 
         }
