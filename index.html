@@ -41,8 +41,10 @@
     }
     #rule-content { text-align: center; padding: 25px; background: #fff; border: 1px solid #eee; border-radius: 12px; width: 85%; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
     #msg-text { font-size: 1.1rem; font-weight: bold; margin-bottom: 12px; color: #444; line-height: 1.4; }
-    #start-btn, #rule-btn, #close-rule-btn { padding: 10px 20px; margin: 5px; font-size: 0.9rem; font-weight: bold; border-radius: 10px; border: 1px solid #ccc; background: #fff; }
+    #start-btn, #rule-btn, #close-rule-btn, #share-btn { padding: 10px 20px; margin: 5px; font-size: 0.9rem; font-weight: bold; border-radius: 10px; border: 1px solid #ccc; background: #fff; cursor: pointer; }
     #start-btn { background: #eee; }
+    /* シェアボタンのスタイル */
+    #share-btn { background: #000; color: #fff; border: none; display: none; }
     #rule-content p { font-size: 0.95rem; margin-bottom: 10px; text-align: left; line-height: 1.5; color: #444; }
     #loading-text { font-weight: bold; color: #aaa; padding: 30px; letter-spacing: 0.05em; }
     #preloader { position: absolute; width: 0; height: 0; overflow: hidden; opacity: 0; pointer-events: none; }
@@ -70,6 +72,7 @@
         <p id="msg-text">もちくまの休日ハント</p>
         <div id="menu-btns">
           <button id="start-btn">開始</button>
+          <button id="share-btn">結果をシェア</button>
           <button id="rule-btn">ルール</button>
         </div>
       </div>
@@ -101,6 +104,7 @@ const scoreDisp = document.getElementById('score');
 const lifeDisp = document.getElementById('life');
 const startBtn = document.getElementById('start-btn');
 const ruleBtn = document.getElementById('rule-btn');
+const shareBtn = document.getElementById('share-btn');
 const closeRuleBtn = document.getElementById('close-rule-btn');
 const loadingText = document.getElementById('loading-text');
 const menuArea = document.getElementById('menu-area');
@@ -186,11 +190,19 @@ window.addEventListener('mouseup', endDodge);
 
 startBtn.addEventListener('click', () => { if(state.canStart) startSequence(); });
 
+// シェアボタンのクリックイベント
+shareBtn.addEventListener('click', () => {
+  const text = encodeURIComponent(`「もちくまの休日ハント」で遊んだよ！\n今回のスコアは【${state.score}】でした！\n\n#もちくま #もちくまの休日ハント`);
+  const url = encodeURIComponent(window.location.href);
+  window.open(`https://twitter.com/intent/tweet?text=${text}&url=${url}`, '_blank');
+});
+
 function startSequence() {
   bgm.volume = 0.2; bgm.currentTime = 0;
   bgm.play().catch(e => console.log("再生失敗:", e));
   state.canStart = false;
   msgLayer.style.display = 'none';
+  shareBtn.style.display = 'none'; // 開始時は非表示
   setMochikumaImage(IMAGES.NORMAL);
   countdownDisp.style.display = 'block';
   countdownDisp.innerText = 'Ready';
@@ -263,7 +275,6 @@ function spawn() {
           state.score += 10; 
           scoreDisp.innerText = `SCORE: ${state.score}`; 
           
-          // 効果音再生 (音量を0.15に調整)
           getSe.currentTime = 0;
           getSe.volume = 0.15;
           getSe.play().catch(e => {});
@@ -306,6 +317,7 @@ function endGame(gameOverImg, typeName) {
   }
   
   startBtn.innerText = '再挑戦';
+  shareBtn.style.display = 'inline-block'; // ゲームオーバー時に表示
   msgLayer.style.display = 'flex';
   setTimeout(() => { state.canStart = true; }, 800);
 }
