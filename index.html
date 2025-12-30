@@ -15,20 +15,30 @@
     #game-field { flex: 1; position: relative; overflow: hidden; width: 100%; }
     
     #mochikuma {
-      width: 120px; height: 120px; position: absolute; bottom: 40px; left: 50%;
-      transform: translate3d(-50%, 0, 0); background-size: contain; background-repeat: no-repeat;
-      background-position: center; transition: transform 0.1s ease-out; z-index: 5; will-change: transform;
+      /* 横幅を120pxに固定。高さは一番高い画像(330px)の比率に合わせて132pxに設定 */
+      width: 120px; 
+      height: 132px; 
+      position: absolute; 
+      bottom: 40px; 
+      left: 50%;
+      transform: translate3d(-50%, 0, 0); 
+      background-size: contain; 
+      background-repeat: no-repeat;
+      /* ここで下揃えに設定 */
+      background-position: center bottom; 
+      transition: transform 0.1s ease-out; 
+      z-index: 5; 
+      will-change: transform;
     }
     #mochikuma.dodging { transform: translate3d(50%, 0, 0); }
     
     #countdown { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; font-weight: bold; color: #555; z-index: 15; }
     
-    /* オブジェクトの基本設定（画像を表示するため背景色を削除） */
     .obj { 
       position: absolute; 
       left: 50%; 
       top: 0; 
-      width: 80px; /* 画像の表示サイズに合わせて調整してください */
+      width: 80px; 
       height: 80px; 
       background-size: contain; 
       background-repeat: no-repeat; 
@@ -116,14 +126,12 @@ const preloader = document.getElementById('preloader');
 const bgm = document.getElementById('bgm');
 const muteBtn = document.getElementById('mute-btn');
 
-// 画像パスの設定
 const IMAGES = {
   NORMAL: 'default.png',
   DODGE:  'yoke.png',
-  HIT_JOB: 'shigoto.png',
+  HIT_JOB: 'gameover-shigoto.png', // ファイル名変更
   HIT_REST: 'yasumi.png',
   KUMO: 'kumo.png',
-  // 追加オブジェクト画像
   SIGOTO: 'sigoto.png',
   KAZI: 'kazi.png',
   GAKKOU: 'gakkou.png',
@@ -220,15 +228,8 @@ function spawn() {
   if(!state.active) return;
   const obj = document.createElement('div');
   obj.className = 'obj';
-  
   const isNegative = Math.random() > 0.5;
-  let targetImg = "";
-  
-  if(isNegative) {
-    targetImg = NEGATIVE_TYPES[Math.floor(Math.random() * NEGATIVE_TYPES.length)];
-  } else {
-    targetImg = IMAGES.KYUZITU;
-  }
+  let targetImg = isNegative ? NEGATIVE_TYPES[Math.floor(Math.random() * NEGATIVE_TYPES.length)] : IMAGES.KYUZITU;
   
   obj.style.backgroundImage = `url('${targetImg}')`;
   document.getElementById('game-field').appendChild(obj);
