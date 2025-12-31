@@ -10,13 +10,12 @@
     body { background: #f0f0f0; overflow: hidden; font-family: sans-serif; user-select: none; touch-action: none; display: flex; justify-content: center; align-items: center; }
     #game-wrap { width: 100vw; max-width: 450px; height: 100vh; height: 100dvh; position: relative; background: #eef6ff; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
     
-    /* ステータスバー：要素を左右に振り分け、音量を右端に */
+    /* ステータスバー：要素を左右端に完全に分ける */
     #status { 
       height: 60px; 
       display: flex; 
-      justify-content: space-between; 
       align-items: center; 
-      padding: 0 10px;
+      padding: 0 15px;
       font-weight: bold; 
       color: #666; 
       background: #f5faff; 
@@ -24,28 +23,34 @@
       z-index: 10; 
     }
     
-    #score { font-size: 0.85rem; white-space: nowrap; }
-    
-    /* 右側のアイテム（ライフと音量）をまとめる */
+    #score { font-size: 0.9rem; white-space: nowrap; }
+
+    /* 中央の余白：これで左右に押し広げる */
+    .spacer { flex-grow: 1; }
+
+    /* 右側のグループ：ライフと音量を固定 */
     .status-right {
       display: flex;
       align-items: center;
-      gap: 8px;
+      gap: 12px; /* 要素間の距離を確保 */
     }
 
+    /* ライフ：文字色とサイズを維持 */
     #life { 
       display: flex; 
       align-items: center; 
-      gap: 3px; 
+      gap: 4px; 
       color: #ff6b6b; 
-      font-size: 0.8rem;
+      font-size: 0.9rem;
+      white-space: nowrap;
     }
-    .heart-container { display: flex; gap: 1px; align-items: center; }
-    .heart-icon { width: 18px; height: 18px; object-fit: contain; display: block; }
+    .heart-container { display: flex; gap: 2px; align-items: center; }
+    .heart-icon { width: 22px; height: 22px; object-fit: contain; display: block; }
 
+    /* 音量ボタン：サイズを戻して右端に */
     #mute-btn { 
-      width: 26px; 
-      height: 26px; 
+      width: 30px; 
+      height: 30px; 
       background-color: transparent;
       background-image: url('volume-ON.png');
       background-size: contain;
@@ -99,6 +104,7 @@
 <div id="game-wrap">
   <div id="status">
     <div id="score">SCORE: 0</div>
+    <div class="spacer"></div>
     <div class="status-right">
       <div id="life">
         LIFE：<span id="heart-wrap" class="heart-container"></span>
