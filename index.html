@@ -11,7 +11,11 @@
     #game-wrap { width: 100vw; max-width: 450px; height: 100vh; height: 100dvh; position: relative; background: #eef6ff; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
     
     #status { height: 60px; display: flex; justify-content: space-around; align-items: center; font-weight: bold; color: #666; background: #f5faff; border-bottom: 1px solid #dee7ef; z-index: 10; }
-    #life { color: #ff6b6b; }
+    
+    /* ライフ画像のスタイル */
+    #life { display: flex; gap: 4px; align-items: center; }
+    .heart-icon { width: 24px; height: 24px; object-fit: contain; }
+
     #mute-btn { position: absolute; top: 15px; right: 15px; width: 30px; height: 30px; background: none; border: none; font-size: 1.5rem; cursor: pointer; z-index: 30; outline: none; }
     
     #game-field { flex: 1; position: relative; overflow: hidden; width: 100%; }
@@ -30,7 +34,6 @@
     
     #msg-text { font-size: 1rem; font-weight: bold; margin-bottom: 10px; color: #444; line-height: 1.4; }
     
-    /* ボタンを小さく・狭く調整 */
     #start-btn, #rule-btn, #close-rule-btn, #share-btn { 
       padding: 6px 16px; 
       margin: 4px; 
@@ -59,7 +62,7 @@
   <button id="mute-btn">🔊</button>
   <div id="status">
     <div id="score">SCORE: 0</div>
-    <div id="life">LIFE: ❤❤❤</div>
+    <div id="life"></div>
   </div>
   <div id="game-field">
     <div id="mochikuma"></div>
@@ -95,7 +98,6 @@
 </div>
 
 <script>
-// (ロジックは変更なし)
 const mk = document.getElementById('mochikuma');
 const dodgeBtn = document.getElementById('dodge-btn');
 const msgLayer = document.getElementById('msg-layer');
@@ -155,6 +157,7 @@ const IMAGES = {
   NORMAL: 'default.png', DODGE: 'yoke.png', HIT_REST: 'yasumi.png', KUMO: 'kumo.png',
   SIGOTO: 'sigoto.png', KAZI: 'kazi.png', GAKKOU: 'gakkou.png', KYUZITU: 'kyuzitu.png',
   GET: 'default-get.png', TITLE: 'title.png',
+  HEART_A: 'heart-A.png', HEART_B: 'heart-B.png',
   GO_SIGOTO: 'gameover-shigoto.png', GO_KAZI: 'gameover-kazi.png', GO_GAKKOU: 'gameover-gakkou.png'
 };
 
@@ -278,9 +281,15 @@ function initGame() {
   spawn();
 }
 
+// ライフ表示を画像で更新
 function updateLife() {
-  const currentLife = Math.max(0, state.life);
-  lifeDisp.innerText = `LIFE: ${'❤'.repeat(currentLife)}${'♡'.repeat(3 - currentLife)}`;
+  lifeDisp.innerHTML = '';
+  for (let i = 0; i < 3; i++) {
+    const img = document.createElement('img');
+    img.className = 'heart-icon';
+    img.src = i < state.life ? IMAGES.HEART_A : IMAGES.HEART_B;
+    lifeDisp.appendChild(img);
+  }
 }
 
 function endGame(gameOverImg, typeName) {
@@ -341,6 +350,7 @@ Promise.all([
 ]).then(() => {
   loadingText.style.display = 'none'; menuArea.style.display = 'block';
   setMochikumaImage(IMAGES.NORMAL);
+  updateLife(); // 初期表示
 });
 
 ruleBtn.addEventListener('click', () => ruleLayer.style.display = 'flex');
