@@ -10,7 +10,7 @@
     body { background: #f0f0f0; overflow: hidden; font-family: sans-serif; user-select: none; touch-action: none; display: flex; justify-content: center; align-items: center; }
     #game-wrap { width: 100vw; max-width: 450px; height: 100vh; height: 100dvh; position: relative; background: #eef6ff; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
     
-    /* ステータスバー（指示通りのレイアウトを維持） */
+    /* ステータスバー（レイアウト維持） */
     #status { 
       height: 60px; 
       display: flex; 
@@ -64,7 +64,7 @@
     #countdown { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; font-weight: bold; color: #555; z-index: 15; }
     .obj { position: absolute; left: 50%; top: 0; width: 80px; height: 80px; background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 4; transform: translate3d(-50%, -100px, 0); will-change: transform; }
     
-    /* ロゴアニメーションの設定 */
+    /* ロゴアニメーション */
     @keyframes poyon {
       0% { transform: scale(0); opacity: 0; }
       70% { transform: scale(1.1); opacity: 1; }
@@ -280,7 +280,9 @@ function spawn() {
 
   let posY = -100;
   let hasChecked = false;
-  const currentSpeed = Math.min(state.speed + (state.score / 25), 18);
+  
+  // 加速スピードを緩和（25から50へ）
+  const currentSpeed = Math.min(state.speed + (state.score / 50), 18);
 
   const loop = setInterval(() => {
     if(!state.active) { clearInterval(loop); obj.remove(); return; }
@@ -382,7 +384,6 @@ function backToTitle() {
   shareBtn.style.display = 'none';
   setMochikumaImage(IMAGES.NORMAL);
 
-  // アニメーションの再発火
   titleLogo.style.animation = 'none';
   titleLogo.offsetHeight; 
   titleLogo.style.animation = null;
