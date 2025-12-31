@@ -10,19 +10,26 @@
     body { background: #f0f0f0; overflow: hidden; font-family: sans-serif; user-select: none; touch-action: none; display: flex; justify-content: center; align-items: center; }
     #game-wrap { width: 100vw; max-width: 450px; height: 100vh; height: 100dvh; position: relative; background: #eef6ff; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
     
-    #status { height: 60px; display: flex; justify-content: space-around; align-items: center; font-weight: bold; color: #666; background: #f5faff; border-bottom: 1px solid #dee7ef; z-index: 10; }
+    /* ステータスバーのレイアウト調整（被り防止） */
+    #status { 
+      height: 60px; 
+      display: flex; 
+      justify-content: space-between; 
+      align-items: center; 
+      padding: 0 15px;
+      font-weight: bold; 
+      color: #666; 
+      background: #f5faff; 
+      border-bottom: 1px solid #dee7ef; 
+      z-index: 10; 
+    }
     
-    #life { display: flex; align-items: center; gap: 4px; color: #ff6b6b; }
-    .heart-container { display: flex; gap: 2px; align-items: center; margin-left: 2px; }
-    .heart-icon { width: 22px; height: 22px; object-fit: contain; display: block; }
-
-    /* 音量ボタンの画像化 */
+    #score { flex: 1; font-size: 0.9rem; }
+    
+    /* 音量ボタンをステータスバー内に配置 */
     #mute-btn { 
-      position: absolute; 
-      top: 15px; 
-      right: 15px; 
-      width: 32px; 
-      height: 32px; 
+      width: 28px; 
+      height: 28px; 
       background-color: transparent;
       background-image: url('volume-ON.png');
       background-size: contain;
@@ -30,10 +37,22 @@
       background-position: center;
       border: none; 
       cursor: pointer; 
-      z-index: 30; 
       outline: none; 
+      margin: 0 10px;
     }
     
+    #life { 
+      flex: 1;
+      display: flex; 
+      align-items: center; 
+      justify-content: flex-end;
+      gap: 4px; 
+      color: #ff6b6b; 
+      font-size: 0.9rem;
+    }
+    .heart-container { display: flex; gap: 2px; align-items: center; margin-left: 2px; }
+    .heart-icon { width: 20px; height: 20px; object-fit: contain; display: block; }
+
     #game-field { flex: 1; position: relative; overflow: hidden; width: 100%; }
     #mochikuma { width: 120px; height: 132px; position: absolute; bottom: 40px; left: 50%; transform: translate3d(-50%, 0, 0); background-size: contain; background-repeat: no-repeat; background-position: center bottom; transition: transform 0.1s ease-out; z-index: 5; will-change: transform; }
     #mochikuma.dodging { transform: translate3d(50%, 0, 0); }
@@ -75,9 +94,9 @@
 <body>
 <div id="preloader"></div>
 <div id="game-wrap">
-  <button id="mute-btn"></button>
   <div id="status">
     <div id="score">SCORE: 0</div>
+    <button id="mute-btn"></button>
     <div id="life">
       LIFE：<span id="heart-wrap" class="heart-container"></span>
     </div>
@@ -116,6 +135,7 @@
 </div>
 
 <script>
+// ロジック部分は前回のものを継承
 const mk = document.getElementById('mochikuma');
 const dodgeBtn = document.getElementById('dodge-btn');
 const msgLayer = document.getElementById('msg-layer');
@@ -282,7 +302,7 @@ function spawn() {
 
 function startSequence() {
   state.canStart = false; state.score = 0; state.life = 3; state.isSmiling = false; state.mode = 'game';
-  scoreDisp.innerText = `SCORE: 0`; updateLife();
+  scoreDisp.innerText = `SCORE: ${state.score}`; updateLife();
   msgLayer.style.display = 'none'; shareBtn.style.display = 'none';
   setMochikumaImage(IMAGES.NORMAL);
   countdownDisp.style.display = 'block'; countdownDisp.innerText = 'Ready';
@@ -341,14 +361,10 @@ function backToTitle() {
   setMochikumaImage(IMAGES.NORMAL);
 }
 
-// ミュートボタンの画像切り替え
 muteBtn.addEventListener('click', () => {
   state.isMuted = !state.isMuted;
   if (bgmGain) bgmGain.gain.value = state.isMuted ? 0 : (isMobile ? 0.4 : 0.2);
-  
-  // 背景画像を切り替え
   muteBtn.style.backgroundImage = `url('${state.isMuted ? IMAGES.VOL_OFF : IMAGES.VOL_ON}')`;
-  
   if (audioCtx.state === 'suspended') audioCtx.resume();
 });
 
