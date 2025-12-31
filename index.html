@@ -20,7 +20,6 @@
     #countdown { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; font-weight: bold; color: #555; z-index: 15; }
     .obj { position: absolute; left: 50%; top: 0; width: 80px; height: 80px; background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 4; transform: translate3d(-50%, -100px, 0); will-change: transform; }
     
-    /* タイトル位置を90pxに調整 */
     #msg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; display: flex; justify-content: center; align-items: flex-start; padding-top: 90px; z-index: 20; }
     #msg-content { text-align: center; padding: 40px 30px; background-image: url('kumo.png'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center; background-color: transparent; border: none; width: 320px; height: 227px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
     
@@ -148,7 +147,7 @@ const NEGATIVE_TYPES = [
   { img: IMAGES.GAKKOU, goImg: IMAGES.GO_GAKKOU, name: "学校" }
 ];
 
-let state = { score: 0, life: 3, active: false, dodging: false, speed: 6, canStart: true, isMuted: false, isSmiling: false };
+let state = { score: 0, life: 3, active: false, dodging: false, speed: 6, canStart: true, isMuted: false, isSmiling: false, mode: 'title' };
 let spawnTimer = null;
 
 function setMochikumaImage(url) { mk.style.backgroundImage = `url('${url}')`; }
@@ -243,7 +242,7 @@ function spawn() {
 }
 
 function startSequence() {
-  state.canStart = false; state.score = 0; state.life = 3; state.isSmiling = false;
+  state.canStart = false; state.score = 0; state.life = 3; state.isSmiling = false; state.mode = 'game';
   scoreDisp.innerText = `SCORE: 0`; updateLife();
   msgLayer.style.display = 'none'; shareBtn.style.display = 'none';
   setMochikumaImage(IMAGES.NORMAL);
@@ -268,14 +267,27 @@ function updateLife() {
 }
 
 function endGame(gameOverImg, typeName) {
-  state.active = false; stopBGM();
+  state.active = false; stopBGM(); state.mode = 'result';
   if (spawnTimer) clearTimeout(spawnTimer);
   document.querySelectorAll('.obj').forEach(o => o.remove());
   setMochikumaImage(gameOverImg);
   msgText.innerHTML = (typeName === '休日' ? `休日が足りない…` : `${typeName}には勝てなかった…`) + `<br>SCORE: ${state.score}`;
-  startBtn.innerText = '再挑戦'; shareBtn.style.display = 'inline-block';
+  startBtn.innerText = 'タイトルに戻る'; 
+  ruleBtn.style.display = 'none';
+  shareBtn.style.display = 'inline-block';
   msgLayer.style.display = 'flex';
   setTimeout(() => { state.canStart = true; }, 800);
+}
+
+function backToTitle() {
+  state.mode = 'title';
+  state.score = 0; state.life = 3;
+  scoreDisp.innerText = `SCORE: 0`; updateLife();
+  msgText.innerText = 'もちくまの休日ハント';
+  startBtn.innerText = '開始';
+  ruleBtn.style.display = 'inline-block';
+  shareBtn.style.display = 'none';
+  setMochikumaImage(IMAGES.NORMAL);
 }
 
 muteBtn.addEventListener('click', () => {
@@ -309,7 +321,17 @@ Promise.all([
 
 ruleBtn.addEventListener('click', () => ruleLayer.style.display = 'flex');
 closeRuleBtn.addEventListener('click', () => ruleLayer.style.display = 'none');
-startBtn.addEventListener('click', () => { if(state.canStart) { if (audioCtx.state === 'suspended') audioCtx.resume(); startSequence(); } });
+
+startBtn.addEventListener('click', () => { 
+  if(!state.canStart) return;
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  
+  if(state.mode === 'title') {
+    startSequence(); 
+  } else if(state.mode === 'result') {
+    backToTitle();
+  }
+});
 
 shareBtn.addEventListener('click', () => {
   const text = encodeURIComponent(`「もちくまの休日ハント」で遊んだよ！\nスコアは【${state.score}】でした！\n\n#もちくま #もちくまの休日ハント`);
