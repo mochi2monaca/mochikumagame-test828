@@ -23,6 +23,9 @@
     #msg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; display: flex; justify-content: center; align-items: flex-start; padding-top: 90px; z-index: 20; }
     #msg-content { text-align: center; padding: 40px 30px; background-image: url('kumo.png'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center; background-color: transparent; border: none; width: 320px; height: 227px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
     
+    /* ロゴ画像のスタイル */
+    #title-logo { max-width: 220px; height: auto; margin-bottom: 10px; display: block; }
+    
     #rule-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.2); display: flex; justify-content: center; align-items: center; z-index: 30; }
     #rule-content { text-align: center; padding: 25px; background: #fff; border-radius: 12px; width: 85%; box-shadow: 0 10px 30px rgba(0,0,0,0.15); }
     
@@ -55,7 +58,8 @@
     <div id="msg-content">
       <div id="loading-text">Now loading...</div>
       <div id="menu-area" style="display: none;">
-        <p id="msg-text">もちくまの休日ハント</p>
+        <img src="title.png" id="title-logo" alt="もちくまの休日ハント">
+        <p id="msg-text" style="display: none;"></p>
         <div id="menu-btns">
           <button id="start-btn">開始</button>
           <button id="share-btn">結果をシェア</button>
@@ -86,6 +90,7 @@ const msgLayer = document.getElementById('msg-layer');
 const ruleLayer = document.getElementById('rule-layer');
 const countdownDisp = document.getElementById('countdown');
 const msgText = document.getElementById('msg-text');
+const titleLogo = document.getElementById('title-logo');
 const scoreDisp = document.getElementById('score');
 const lifeDisp = document.getElementById('life');
 const startBtn = document.getElementById('start-btn');
@@ -137,7 +142,7 @@ function playGetSound() {
 const IMAGES = {
   NORMAL: 'default.png', DODGE: 'yoke.png', HIT_REST: 'yasumi.png', KUMO: 'kumo.png',
   SIGOTO: 'sigoto.png', KAZI: 'kazi.png', GAKKOU: 'gakkou.png', KYUZITU: 'kyuzitu.png',
-  GET: 'default-get.png',
+  GET: 'default-get.png', TITLE: 'title.png',
   GO_SIGOTO: 'gameover-shigoto.png', GO_KAZI: 'gameover-kazi.png', GO_GAKKOU: 'gameover-gakkou.png'
 };
 
@@ -271,7 +276,12 @@ function endGame(gameOverImg, typeName) {
   if (spawnTimer) clearTimeout(spawnTimer);
   document.querySelectorAll('.obj').forEach(o => o.remove());
   setMochikumaImage(gameOverImg);
+  
+  // 結果画面の表示
+  titleLogo.style.display = 'none';
+  msgText.style.display = 'block';
   msgText.innerHTML = (typeName === '休日' ? `休日が足りない…` : `${typeName}には勝てなかった…`) + `<br>SCORE: ${state.score}`;
+  
   startBtn.innerText = 'タイトルに戻る'; 
   ruleBtn.style.display = 'none';
   shareBtn.style.display = 'inline-block';
@@ -283,7 +293,11 @@ function backToTitle() {
   state.mode = 'title';
   state.score = 0; state.life = 3;
   scoreDisp.innerText = `SCORE: 0`; updateLife();
-  msgText.innerText = 'もちくまの休日ハント';
+  
+  // タイトル画面の表示に戻す
+  titleLogo.style.display = 'block';
+  msgText.style.display = 'none';
+  
   startBtn.innerText = '開始';
   ruleBtn.style.display = 'inline-block';
   shareBtn.style.display = 'none';
