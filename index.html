@@ -31,7 +31,7 @@
     }
     #mochikuma.dodging { transform: translate3d(50%, 0, 0); }
 
-    /* カウントダウン表示（ここを修正・復元しました） */
+    /* カウントダウン表示 */
     #countdown { 
       position: absolute; 
       top: 40%; 
@@ -68,7 +68,13 @@
     #share-btn { background: #000; color: #fff; border: none; display: none; }
 
     #ui-area { height: 140px; display: flex; align-items: center; justify-content: center; background: #f5faff; border-top: 1px solid #dee7ef; z-index: 10; padding-bottom: env(safe-area-inset-bottom); }
-    #dodge-btn { width: 70%; height: 80px; font-size: 1.8rem; font-weight: bold; background: #0056b3; border: none; border-radius: 40px; color: #ffffff; outline: none; box-shadow: 0 4px 0 #003d7a; }
+    
+    /* よけるボタン（初期状態を非表示に変更） */
+    #dodge-btn { 
+      display: none; 
+      width: 70%; height: 80px; font-size: 1.8rem; font-weight: bold; background: #0056b3; 
+      border: none; border-radius: 40px; color: #ffffff; outline: none; box-shadow: 0 4px 0 #003d7a; 
+    }
     #dodge-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #003d7a; }
     
     #loading-text { font-weight: bold; color: #aaa; padding: 30px; letter-spacing: 0.05em; }
@@ -276,6 +282,10 @@ function startSequence() {
   state.canStart = false; state.score = 0; state.life = 3; state.isSmiling = false; state.mode = 'game';
   scoreDisp.innerText = `SCORE: ${state.score}`; updateLife();
   msgLayer.style.display = 'none'; shareBtn.style.display = 'none';
+  
+  // 開始時に「よける」ボタンを表示
+  dodgeBtn.style.display = 'block';
+  
   setMochikumaImage(IMAGES.NORMAL);
   countdownDisp.style.display = 'block'; countdownDisp.innerText = 'Ready';
   setTimeout(() => {
@@ -320,6 +330,10 @@ function endGame(gameOverImg, typeName) {
 function backToTitle() {
   state.mode = 'title'; state.score = 0; state.life = 3;
   scoreDisp.innerText = `SCORE: 0`; updateLife();
+  
+  // タイトルに戻る際に「よける」ボタンを再び隠す
+  dodgeBtn.style.display = 'none';
+  
   titleLogo.style.display = 'block';
   msgText.style.display = 'none';
   startBtn.innerText = '開始';
