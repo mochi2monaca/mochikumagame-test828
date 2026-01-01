@@ -32,17 +32,7 @@
     #mochikuma.dodging { transform: translate3d(50%, 0, 0); }
 
     /* カウントダウン表示 */
-    #countdown { 
-      position: absolute; 
-      top: 40%; 
-      left: 50%; 
-      transform: translate(-50%, -50%); 
-      font-size: 4rem; 
-      font-weight: bold; 
-      color: #555; 
-      z-index: 15; 
-      white-space: nowrap;
-    }
+    #countdown { position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; font-weight: bold; color: #555; z-index: 15; white-space: nowrap; }
 
     .obj { 
       position: absolute; left: 50%; top: 0; width: 80px; height: 80px; background-size: contain; background-repeat: no-repeat; background-position: center; 
@@ -68,13 +58,7 @@
     #share-btn { background: #000; color: #fff; border: none; display: none; }
 
     #ui-area { height: 140px; display: flex; align-items: center; justify-content: center; background: #f5faff; border-top: 1px solid #dee7ef; z-index: 10; padding-bottom: env(safe-area-inset-bottom); }
-    
-    /* よけるボタン（初期状態を非表示に変更） */
-    #dodge-btn { 
-      display: none; 
-      width: 70%; height: 80px; font-size: 1.8rem; font-weight: bold; background: #0056b3; 
-      border: none; border-radius: 40px; color: #ffffff; outline: none; box-shadow: 0 4px 0 #003d7a; 
-    }
+    #dodge-btn { display: none; width: 70%; height: 80px; font-size: 1.8rem; font-weight: bold; background: #0056b3; border: none; border-radius: 40px; color: #ffffff; outline: none; box-shadow: 0 4px 0 #003d7a; }
     #dodge-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #003d7a; }
     
     #loading-text { font-weight: bold; color: #aaa; padding: 30px; letter-spacing: 0.05em; }
@@ -282,10 +266,7 @@ function startSequence() {
   state.canStart = false; state.score = 0; state.life = 3; state.isSmiling = false; state.mode = 'game';
   scoreDisp.innerText = `SCORE: ${state.score}`; updateLife();
   msgLayer.style.display = 'none'; shareBtn.style.display = 'none';
-  
-  // 開始時に「よける」ボタンを表示
   dodgeBtn.style.display = 'block';
-  
   setMochikumaImage(IMAGES.NORMAL);
   countdownDisp.style.display = 'block'; countdownDisp.innerText = 'Ready';
   setTimeout(() => {
@@ -330,10 +311,7 @@ function endGame(gameOverImg, typeName) {
 function backToTitle() {
   state.mode = 'title'; state.score = 0; state.life = 3;
   scoreDisp.innerText = `SCORE: 0`; updateLife();
-  
-  // タイトルに戻る際に「よける」ボタンを再び隠す
   dodgeBtn.style.display = 'none';
-  
   titleLogo.style.display = 'block';
   msgText.style.display = 'none';
   startBtn.innerText = '開始';
@@ -352,18 +330,30 @@ muteBtn.addEventListener('click', () => {
   if (audioCtx.state === 'suspended') audioCtx.resume();
 });
 
+// プリロード処理の再利用
 function preloadAllImages(imageObj, callback) {
   const urls = Object.values(imageObj); let loadedCount = 0;
+  preloader.innerHTML = ''; // クリアして再登録
   urls.forEach(url => {
     const img = new Image();
     img.onload = img.onerror = () => { 
       loadedCount++; 
       preloader.appendChild(img);
-      if (loadedCount === urls.length) callback(); 
+      if (callback && loadedCount === urls.length) callback(); 
     };
     img.src = url;
   });
 }
+
+// 【新規追加】スリープ復帰・タブ切り替え時の画像再認識処理
+document.addEventListener('visibilitychange', () => {
+  if (document.visibilityState === 'visible') {
+    // 復帰時に画像を再ロードしてメモリに強制確保
+    preloadAllImages(IMAGES);
+    // 音声コンテキストの再開
+    if (audioCtx.state === 'suspended') audioCtx.resume();
+  }
+});
 
 Promise.all([
   new Promise(res => preloadAllImages(IMAGES, res)),
