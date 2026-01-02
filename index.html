@@ -2,10 +2,15 @@
 <html lang="ja">
 <head>
   <meta charset="UTF-8">
+  <meta property="og:title" content="もちくまの休日ハント">
+  <meta property="og:description" content="迫りくる現実をよけて、休日を勝ち取ろう！">
+  <meta property="og:image" content="https://mochikumas-holiday-hunt.vercel.app/ogpimage.png">
+  <meta property="og:url" content="https://mochikumas-holiday-hunt.vercel.app/">
+  <meta name="twitter:card" content="summary_large_image">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
   <title>もちくまの休日ハント</title>
   <style>
-    /* 元の安定レイアウトを完全再現 */
+    /* 基本レイアウト：ご提示のコードを維持 */
     * { margin: 0; padding: 0; box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
     body { background: #f0f0f0; overflow: hidden; font-family: sans-serif; user-select: none; touch-action: none; display: flex; justify-content: center; align-items: center; }
     #game-wrap { width: 100vw; max-width: 450px; height: 100vh; height: 100dvh; position: relative; background: #eef6ff; display: flex; flex-direction: column; box-shadow: 0 0 20px rgba(0,0,0,0.1); }
@@ -18,29 +23,57 @@
     .heart-container { display: flex; gap: 2px; align-items: center; }
     .heart-icon { width: 22px; height: 22px; object-fit: contain; display: block; }
     
-    #mute-btn { width: 30px; height: 30px; background-color: transparent; background-size: contain; background-repeat: no-repeat; background-position: center; border: none; cursor: pointer; outline: none; -webkit-appearance: none; }
+    #mute-btn { 
+      width: 30px; height: 30px; 
+      background-color: transparent; 
+      background-size: contain; 
+      background-repeat: no-repeat; 
+      background-position: center; 
+      border: none; 
+      cursor: pointer; 
+      outline: none; 
+      display: block; 
+      pointer-events: auto;
+      -webkit-appearance: none;
+    }
     
     #game-field { flex: 1; position: relative; overflow: hidden; width: 100%; }
 
-    /* もちくま本体：ここが点滅対策のキモ */
     #mochikuma { 
       width: 120px; height: 132px; position: absolute; bottom: 40px; left: 50%; 
       transform: translate3d(-50%, 0, 0); 
+      background-size: contain; background-repeat: no-repeat; background-position: center bottom; 
       transition: transform 0.1s ease-out; z-index: 5; 
       will-change: transform;
+      -webkit-backface-visibility: hidden; backface-visibility: hidden;
     }
     #mochikuma.dodging { transform: translate3d(50%, 0, 0); }
 
-    /* 重ねるレイヤーのスタイル */
-    .mk-layer {
-      position: absolute; top: 0; left: 0; width: 100%; height: 100%;
-      background-size: contain; background-repeat: no-repeat; background-position: center bottom;
-      opacity: 0; transition: opacity 0.05s; /* 極短のフェードで滑らかに */
+    /* 点滅防止：画面外に透明な状態で配置し続けるための設定 */
+    #ghost-images {
+      position: absolute;
+      top: -9999px;
+      left: -9999px;
+      width: 0;
+      height: 0;
+      overflow: hidden;
+      opacity: 0.01; /* 0だとブラウザが描画をサボるため、極小の値を設定 */
       pointer-events: none;
     }
-    .mk-layer.show { opacity: 1; }
+    .ghost-layer { width: 1px; height: 1px; }
 
-    .obj { position: absolute; left: 50%; top: 0; width: 80px; height: 80px; background-size: contain; background-repeat: no-repeat; background-position: center; z-index: 4; transform: translate3d(-50%, -100px, 0); will-change: transform; }
+    #countdown { 
+      position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); 
+      font-size: 4rem; font-weight: bold; color: #555; z-index: 15; white-space: nowrap; 
+    }
+
+    .obj { 
+      position: absolute; left: 50%; top: 0; width: 80px; height: 80px; 
+      background-size: contain; background-repeat: no-repeat; background-position: center; 
+      z-index: 4; transform: translate3d(-50%, -100px, 0); 
+      will-change: transform; 
+      -webkit-backface-visibility: hidden; backface-visibility: hidden;
+    }
 
     @keyframes poyon {
       0% { transform: scale(0); opacity: 0; }
@@ -49,29 +82,36 @@
     }
 
     #msg-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: transparent; display: flex; justify-content: center; align-items: flex-start; padding-top: 90px; z-index: 20; pointer-events: none; }
-    #msg-content { pointer-events: auto; text-align: center; padding: 35px 20px; background-image: url('./kumo.png'); background-size: 100% 100%; width: 320px; height: 227px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
-    #title-logo { max-width: 280px; height: auto; margin-bottom: 12px; display: block; animation: poyon 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; transform-origin: center; }
+    #msg-content { pointer-events: auto; text-align: center; padding: 35px 20px; background-image: url('./kumo.png'); background-size: 100% 100%; background-repeat: no-repeat; background-position: center; background-color: transparent; width: 320px; height: 227px; display: flex; flex-direction: column; justify-content: center; align-items: center; }
+    #title-logo { max-width: 280px; height: auto; margin-bottom: 12px; display: block; filter: drop-shadow(0 2px 4px rgba(0,0,0,0.1)); animation: poyon 0.6s cubic-bezier(0.34, 1.56, 0.64, 1) forwards; transform-origin: center; }
     
     #rule-layer { position: absolute; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.4); display: flex; justify-content: center; align-items: center; z-index: 100; }
     #rule-content { position: relative; width: 90%; max-width: 344px; line-height: 0; }
     #rule-img { width: 100%; height: auto; border-radius: 12px; }
-    #close-rule-btn { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); padding: 8px 24px; font-size: 0.9rem; font-weight: bold; border-radius: 8px; border: 1px solid #ccc; background: #fff; color: #497297; }
+    #close-rule-btn { 
+      position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%);
+      padding: 8px 24px; font-size: 0.9rem; font-weight: bold; border-radius: 8px; 
+      border: 1px solid #ccc; background: #fff; cursor: pointer; color: #497297;
+    }
 
     #msg-text { font-size: 1rem; font-weight: bold; margin-bottom: 10px; color: #497297; line-height: 1.4; display: block; }
-    #start-btn, #rule-btn, #share-btn { padding: 6px 16px; margin: 4px; font-size: 0.85rem; font-weight: bold; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; color: #497297; }
+    #start-btn, #rule-btn, #share-btn { padding: 6px 16px; margin: 4px; font-size: 0.85rem; font-weight: bold; border-radius: 8px; border: 1px solid #ccc; cursor: pointer; letter-spacing: 0.02em; transition: opacity 0.2s; color: #497297; }
     #start-btn { background: #E3F3FF; }
     #rule-btn { background: #fff; }
     #share-btn { background: #fff; border: 1px solid #ccc; display: none; }
 
     #ui-area { height: 140px; display: flex; align-items: center; justify-content: center; background: #f5faff; border-top: 1px solid #dee7ef; z-index: 10; padding-bottom: env(safe-area-inset-bottom); }
     #dodge-btn { display: none; width: 70%; height: 80px; font-size: 1.8rem; font-weight: bold; background: #0056b3; border: none; border-radius: 40px; color: #ffffff; outline: none; box-shadow: 0 4px 0 #003d7a; }
+    #dodge-btn:active { transform: translateY(2px); box-shadow: 0 2px 0 #003d7a; }
     
-    #loading-text { font-weight: bold; color: #aaa; padding: 30px; }
-    #preloader { position: absolute; width: 0; height: 0; overflow: hidden; opacity: 0; }
+    #loading-text { font-weight: bold; color: #aaa; padding: 30px; letter-spacing: 0.05em; }
+    #preloader { position: absolute; width: 0; height: 0; overflow: hidden; opacity: 0; pointer-events: none; }
   </style>
 </head>
 <body>
+<div id="ghost-images"></div>
 <div id="preloader"></div>
+
 <div id="game-wrap">
   <div id="status">
     <div id="score">SCORE: 0</div>
@@ -82,16 +122,8 @@
     </div>
   </div>
   <div id="game-field">
-    <div id="mochikuma">
-      <div id="l-normal" class="mk-layer show" style="background-image: url('./default.png');"></div>
-      <div id="l-dodge" class="mk-layer" style="background-image: url('./yoke.png');"></div>
-      <div id="l-get" class="mk-layer" style="background-image: url('./default-get.png');"></div>
-      <div id="l-go-sigoto" class="mk-layer" style="background-image: url('./gameover-shigoto.png');"></div>
-      <div id="l-go-kazi" class="mk-layer" style="background-image: url('./gameover-kazi.png');"></div>
-      <div id="l-go-gakkou" class="mk-layer" style="background-image: url('./gameover-gakkou.png');"></div>
-      <div id="l-go-yasumi" class="mk-layer" style="background-image: url('./yasumi.png');"></div>
-    </div>
-    <div id="countdown" style="display: none; position: absolute; top: 40%; left: 50%; transform: translate(-50%, -50%); font-size: 4rem; font-weight: bold; color: #555; z-index: 15;"></div>
+    <div id="mochikuma"></div>
+    <div id="countdown" style="display: none;"></div>
   </div>
   <div id="msg-layer">
     <div id="msg-content">
@@ -119,8 +151,11 @@
 </div>
 
 <script>
-// 基本要素
+// --- JS：既存ロジック・Ready Go演出を一切変えずに追加 ---
+
 const mk = document.getElementById('mochikuma');
+const ghostContainer = document.getElementById('ghost-images');
+// (他要素取得は省略：ご提示の通り)
 const dodgeBtn = document.getElementById('dodge-btn');
 const msgLayer = document.getElementById('msg-layer');
 const ruleLayer = document.getElementById('rule-layer');
@@ -135,70 +170,109 @@ const shareBtn = document.getElementById('share-btn');
 const closeRuleBtn = document.getElementById('close-rule-btn');
 const loadingText = document.getElementById('loading-text');
 const menuArea = document.getElementById('menu-area');
+const preloader = document.getElementById('preloader');
 const muteBtn = document.getElementById('mute-btn');
 
-// 状態管理
-let state = { score: 0, life: 3, active: false, dodging: false, speed: 6, canStart: true, isMuted: false, isSmiling: false, mode: 'title' };
 const isMobile = /iPhone|iPad|iPod|Android/i.test(navigator.userAgent);
 const audioCtx = new (window.AudioContext || window.webkitAudioContext)({ latencyHint: 'interactive' });
-let bgmBuffer, getSoundBuffer, bgmSource, bgmGain, spawnTimer;
+let bgmBuffer = null, getSoundBuffer = null, bgmSource = null, bgmGain = null;
 
-// レイヤー切り替え（チカつき防止の核心）
-function setMKLayer(id) {
-  document.querySelectorAll('.mk-layer').forEach(l => l.classList.remove('show'));
-  const target = document.getElementById(id);
-  if (target) target.classList.add('show');
+// 画像リスト
+const IMAGES = {
+  NORMAL: './default.png', DODGE: './yoke.png', HIT_REST: './yasumi.png', KUMO: './kumo.png',
+  SIGOTO: './sigoto.png', KAZI: './kazi.png', GAKKOU: './gakkou.png', KYUZITU: './kyuzitu.png',
+  GET: './default-get.png', TITLE: './title.png', RULE_IMG: './rule.png',
+  HEART_A: './heart-A.png', HEART_B: './heart-B.png',
+  VOL_ON: './volume-ON.png', VOL_OFF: './volume-OFF.png',
+  GO_SIGOTO: './gameover-shigoto.png', GO_KAZI: './gameover-kazi.png', GO_GAKKOU: './gameover-gakkou.png'
+};
+
+// 【追加】もちくまの全ての状態を画面外で常時レンダリングさせる関数
+function setupGhostImages() {
+  const ghostList = [IMAGES.NORMAL, IMAGES.DODGE, IMAGES.GET, IMAGES.HIT_REST, IMAGES.GO_SIGOTO, IMAGES.GO_KAZI, IMAGES.GO_GAKKOU];
+  ghostList.forEach(url => {
+    const div = document.createElement('div');
+    div.className = 'ghost-layer';
+    div.style.backgroundImage = `url('${url}')`;
+    ghostContainer.appendChild(div);
+  });
 }
 
+// (音声ロード、BGM、SE関数は省略：ご提示の通り)
 async function loadAudio(url) {
   try {
-    const res = await fetch(url);
-    const buf = await res.arrayBuffer();
-    return await audioCtx.decodeAudioData(buf);
-  } catch (e) { return null; }
+    const response = await fetch(url);
+    if (!response.ok) throw new Error('Audio load failed');
+    const arrayBuffer = await response.arrayBuffer();
+    return await audioCtx.decodeAudioData(arrayBuffer);
+  } catch (e) {
+    console.warn(e);
+    return null;
+  }
 }
-
 function playBGM() {
   if (!bgmBuffer) return;
-  if (bgmSource) bgmSource.stop();
+  if (bgmSource) { try { bgmSource.stop(); } catch(e) {} }
+  if (audioCtx.state === 'suspended') audioCtx.resume();
   bgmSource = audioCtx.createBufferSource();
   bgmSource.buffer = bgmBuffer;
   bgmSource.loop = true;
   bgmGain = audioCtx.createGain();
   bgmGain.gain.value = state.isMuted ? 0 : (isMobile ? 0.4 : 0.2);
-  bgmSource.connect(bgmGain).connect(audioCtx.destination);
+  bgmSource.connect(bgmGain);
+  bgmGain.connect(audioCtx.destination);
   bgmSource.start(0);
 }
-
+function stopBGM() { if (bgmSource) { try { bgmSource.stop(); } catch(e) {} bgmSource = null; } }
 function playGetSound() {
   if (!getSoundBuffer || state.isMuted) return;
-  const s = audioCtx.createBufferSource();
-  const g = audioCtx.createGain();
-  s.buffer = getSoundBuffer;
-  g.gain.value = 0.3;
-  s.connect(g).connect(audioCtx.destination);
-  s.start(audioCtx.currentTime);
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  const source = audioCtx.createBufferSource();
+  const gainNode = audioCtx.createGain();
+  source.buffer = getSoundBuffer;
+  gainNode.gain.value = isMobile ? 0.5 : 0.15; 
+  source.connect(gainNode);
+  gainNode.connect(audioCtx.destination);
+  source.start(audioCtx.currentTime);
 }
 
-function updateVisual() {
-  if (state.mode !== 'game') return;
-  if (state.isSmiling) setMKLayer('l-get');
-  else if (state.dodging) setMKLayer('l-dodge');
-  else setMKLayer('l-normal');
+const NEGATIVE_TYPES = [
+  { img: IMAGES.SIGOTO, goImg: IMAGES.GO_SIGOTO, name: "仕事" },
+  { img: IMAGES.KAZI, goImg: IMAGES.GO_KAZI, name: "家事" },
+  { img: IMAGES.GAKKOU, goImg: IMAGES.GO_GAKKOU, name: "学校" }
+];
+
+let state = { score: 0, life: 3, active: false, dodging: false, speed: 6, canStart: true, isMuted: false, isSmiling: false, mode: 'title' };
+let spawnTimer = null;
+
+function setMochikumaImage(url) { mk.style.backgroundImage = `url('${url}')`; }
+
+function showSmileEffect() {
+  state.isSmiling = true;
+  setMochikumaImage(IMAGES.GET);
+  setTimeout(() => {
+    state.isSmiling = false;
+    if(state.active) { setMochikumaImage(state.dodging ? IMAGES.DODGE : IMAGES.NORMAL); }
+  }, 300);
 }
 
-const startDodge = (e) => {
+const startDodge = (e) => { 
   if (e.cancelable) e.preventDefault();
   if (audioCtx.state === 'suspended') audioCtx.resume();
-  if (!state.active) return;
-  state.dodging = true; mk.classList.add('dodging'); updateVisual();
+  if(!state.active) return; 
+  state.dodging = true; 
+  mk.classList.add('dodging'); 
+  if(!state.isSmiling) setMochikumaImage(IMAGES.DODGE);
 };
-const endDodge = (e) => {
-  state.dodging = false; mk.classList.remove('dodging'); updateVisual();
+const endDodge = (e) => { 
+  if (e.cancelable) e.preventDefault();
+  state.dodging = false; 
+  mk.classList.remove('dodging'); 
+  if(state.active && !state.isSmiling) setMochikumaImage(IMAGES.NORMAL);
 };
 
-dodgeBtn.addEventListener('touchstart', startDodge, {passive:false});
-dodgeBtn.addEventListener('touchend', endDodge, {passive:false});
+dodgeBtn.addEventListener('touchstart', startDodge, {passive: false});
+dodgeBtn.addEventListener('touchend', endDodge, {passive: false});
 dodgeBtn.addEventListener('mousedown', startDodge);
 window.addEventListener('mouseup', endDodge);
 
@@ -206,98 +280,163 @@ function spawn() {
   if(!state.active) return;
   const obj = document.createElement('div');
   obj.className = 'obj';
-  const isNeg = Math.random() > 0.5;
-  const types = [{img:'./sigoto.png', l:'l-go-sigoto', n:'仕事'}, {img:'./kazi.png', l:'l-go-kazi', n:'家事'}, {img:'./gakkou.png', l:'l-go-gakkou', n:'学校'}];
-  const t = isNeg ? types[Math.floor(Math.random()*3)] : {img:'./kyuzitu.png'};
-  obj.style.backgroundImage = `url('${t.img}')`;
+  const isNegative = Math.random() > 0.5;
+  let currentObj = null;
+  if(isNegative) {
+    currentObj = NEGATIVE_TYPES[Math.floor(Math.random() * NEGATIVE_TYPES.length)];
+    obj.style.backgroundImage = `url('${currentObj.img}')`;
+  } else {
+    obj.style.backgroundImage = `url('${IMAGES.KYUZITU}')`;
+  }
   document.getElementById('game-field').appendChild(obj);
 
   let posY = -100;
+  let hasChecked = false;
+  const currentSpeed = Math.min(state.speed + (state.score / 50), 18);
+
   const loop = setInterval(() => {
     if(!state.active) { clearInterval(loop); obj.remove(); return; }
-    posY += Math.min(6 + (state.score/50), 18);
+    posY += currentSpeed;
     obj.style.transform = `translate3d(-50%, ${posY}px, 0)`;
     
-    const oR = obj.getBoundingClientRect(), mR = mk.getBoundingClientRect();
-    if (oR.bottom > mR.top + 20 && oR.top < mR.bottom - 20 && oR.right > mR.left + 25 && oR.left < mR.right - 25) {
-      if (!state.dodging) {
-        if (isNeg) { endGame(t.l, t.n); clearInterval(loop); }
-        else {
-          state.score += 10; scoreDisp.innerText = `SCORE: ${state.score}`;
-          playGetSound(); state.isSmiling = true; updateVisual();
-          setTimeout(() => { state.isSmiling = false; updateVisual(); }, 300);
-          obj.remove(); clearInterval(loop);
-        }
+    const objRect = obj.getBoundingClientRect();
+    const mkRect = mk.getBoundingClientRect();
+    const mkHitLeft = mkRect.left + (mkRect.width * 0.2);
+    const mkHitRight = mkRect.right - (mkRect.width * 0.2);
+    const mkHitTop = mkRect.top + (mkRect.height * 0.2);
+    
+    if(!hasChecked && (objRect.right > mkHitLeft && objRect.left < mkHitRight && objRect.bottom > mkHitTop && objRect.top < mkRect.bottom)) {
+      if(!state.dodging) {
+        hasChecked = true;
+        if(isNegative) { endGame(currentObj.goImg, currentObj.name); clearInterval(loop); } 
+        else { state.score += 10; scoreDisp.innerText = `SCORE: ${state.score}`; playGetSound(); showSmileEffect(); obj.remove(); clearInterval(loop); }
       }
     }
-    if (posY > 1000) {
-      if (!isNeg) { state.life--; updateLife(); if(state.life<=0) endGame('l-go-yasumi', '休日'); }
-      obj.remove(); clearInterval(loop);
+    
+    if(!hasChecked && objRect.top > mkRect.bottom) {
+      hasChecked = true;
+      if(!isNegative) { 
+        state.life--; updateLife(); 
+        if(state.life <= 0) { endGame(IMAGES.HIT_REST, '休日'); clearInterval(loop); } 
+      }
     }
+    if(posY > document.getElementById('game-field').clientHeight + 150) { obj.remove(); clearInterval(loop); }
   }, 16);
-  spawnTimer = setTimeout(spawn, Math.max(1800 - state.score*12, 550));
+  spawnTimer = setTimeout(spawn, Math.max(1800 - (state.score * 12), 550));
+}
+
+// 既存の Ready Go 演出を維持
+function startSequence() {
+  state.canStart = false; state.score = 0; state.life = 3; state.isSmiling = false; state.mode = 'game';
+  scoreDisp.innerText = `SCORE: ${state.score}`; updateLife();
+  msgLayer.style.display = 'none'; shareBtn.style.display = 'none';
+  dodgeBtn.style.display = 'block';
+  setMochikumaImage(IMAGES.NORMAL);
+  countdownDisp.style.display = 'block'; countdownDisp.innerText = 'Ready';
+  setTimeout(() => {
+    countdownDisp.innerText = 'Go!'; playBGM();
+    setTimeout(() => { countdownDisp.style.display = 'none'; initGame(); }, 800);
+  }, 1000);
+}
+
+function initGame() {
+  if (spawnTimer) clearTimeout(spawnTimer);
+  document.querySelectorAll('.obj').forEach(o => o.remove());
+  state.active = true; state.dodging = false; state.speed = 6;
+  mk.classList.remove('dodging'); setMochikumaImage(IMAGES.NORMAL);
+  spawn();
 }
 
 function updateLife() {
   heartWrap.innerHTML = '';
-  for(let i=0; i<3; i++) {
+  for (let i = 0; i < 3; i++) {
     const img = document.createElement('img');
     img.className = 'heart-icon';
-    img.src = i < state.life ? './heart-A.png' : './heart-B.png';
+    img.src = i < state.life ? IMAGES.HEART_A : IMAGES.HEART_B;
     heartWrap.appendChild(img);
   }
 }
 
-function endGame(layerId, name) {
-  state.active = false; state.mode = 'result'; if(bgmSource) bgmSource.stop();
-  clearTimeout(spawnTimer); document.querySelectorAll('.obj').forEach(o => o.remove());
-  setMKLayer(layerId);
+function endGame(gameOverImg, typeName) {
+  state.active = false; stopBGM(); state.mode = 'result';
+  if (spawnTimer) clearTimeout(spawnTimer);
+  document.querySelectorAll('.obj').forEach(o => o.remove());
+  setMochikumaImage(gameOverImg);
   titleLogo.style.display = 'none';
   msgText.style.display = 'block';
-  msgText.innerHTML = `${name === '休日' ? '休日が足りない…' : name + 'には勝てなかった…'}<br>SCORE: ${state.score}`;
+  msgText.innerHTML = (typeName === '休日' ? `休日が足りない…` : `${typeName}には勝てなかった…`) + `<br>SCORE: ${state.score}`;
   startBtn.innerText = 'タイトルに戻る';
-  ruleBtn.style.display = 'none'; shareBtn.style.display = 'inline-block';
+  ruleBtn.style.display = 'none';
+  shareBtn.style.display = 'inline-block';
   msgLayer.style.display = 'flex';
+  setTimeout(() => { state.canStart = true; }, 800);
 }
 
 function backToTitle() {
   state.mode = 'title'; state.score = 0; state.life = 3;
-  scoreDisp.innerText = 'SCORE: 0'; updateLife();
+  scoreDisp.innerText = `SCORE: 0`; updateLife();
   dodgeBtn.style.display = 'none';
   titleLogo.style.display = 'block';
-  titleLogo.style.animation = 'none'; titleLogo.offsetHeight; titleLogo.style.animation = null;
   msgText.style.display = 'none';
   startBtn.innerText = '開始';
-  ruleBtn.style.display = 'inline-block'; shareBtn.style.display = 'none';
-  setMKLayer('l-normal');
+  ruleBtn.style.display = 'inline-block';
+  shareBtn.style.display = 'none';
+  setMochikumaImage(IMAGES.NORMAL);
 }
 
 muteBtn.addEventListener('click', () => {
   state.isMuted = !state.isMuted;
   if (bgmGain) bgmGain.gain.value = state.isMuted ? 0 : (isMobile ? 0.4 : 0.2);
-  muteBtn.style.backgroundImage = `url('${state.isMuted ? './volume-OFF.png' : './volume-ON.png'}')`;
+  muteBtn.style.backgroundImage = `url('${state.isMuted ? IMAGES.VOL_OFF : IMAGES.VOL_ON}')`;
+  if (audioCtx.state === 'suspended') audioCtx.resume();
 });
 
-// 初期化
-(async function init() {
-  [bgmBuffer, getSoundBuffer] = await Promise.all([loadAudio('./bgm.mp3'), loadAudio('./get.mp3')]);
-  loadingText.style.display = 'none'; menuArea.style.display = 'block';
+function preloadAllImages(imageObj, callback) {
+  const urls = Object.values(imageObj); let loadedCount = 0;
+  preloader.innerHTML = '';
+  urls.forEach(url => {
+    const img = new Image();
+    img.onload = img.onerror = () => { 
+      loadedCount++; 
+      preloader.appendChild(img);
+      if (callback && loadedCount === urls.length) callback(); 
+    };
+    img.src = url;
+  });
+}
+
+function initUIAfterLoad() {
+  setupGhostImages(); // 【追加】画面外レンダリング開始
+  loadingText.style.display = 'none'; 
+  menuArea.style.display = 'block';
+  setMochikumaImage(IMAGES.NORMAL);
+  muteBtn.style.backgroundImage = `url('${state.isMuted ? IMAGES.VOL_OFF : IMAGES.VOL_ON}')`;
   updateLife();
-  muteBtn.style.backgroundImage = "url('./volume-ON.png')";
-})();
+}
+
+const loadTimeout = setTimeout(initUIAfterLoad, 1000);
+
+Promise.all([
+  new Promise(res => preloadAllImages(IMAGES, res)),
+  loadAudio('./bgm.mp3').then(b => bgmBuffer = b),
+  loadAudio('./get.mp3').then(b => getSoundBuffer = b)
+]).then(() => {
+  clearTimeout(loadTimeout);
+  initUIAfterLoad();
+});
 
 ruleBtn.addEventListener('click', () => ruleLayer.style.display = 'flex');
 closeRuleBtn.addEventListener('click', () => ruleLayer.style.display = 'none');
-startBtn.addEventListener('click', () => {
-  if (state.mode === 'title') {
-    state.mode = 'game'; state.active = true;
-    msgLayer.style.display = 'none'; dodgeBtn.style.display = 'block';
-    playBGM(); updateLife(); spawn();
-  } else { backToTitle(); }
+startBtn.addEventListener('click', () => { 
+  if(!state.canStart) return;
+  if (audioCtx.state === 'suspended') audioCtx.resume();
+  if(state.mode === 'title') { startSequence(); } else if(state.mode === 'result') { backToTitle(); }
 });
+
 shareBtn.addEventListener('click', () => {
-  const text = `「もちくまの休日ハント」で遊んだよ！\nスコアは【${state.score}】でした！\n\n#もちくまの休日ハント`;
-  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(text)}&url=https://mochikumas-holiday-hunt.vercel.app/`, '_blank');
+  const shareText = `「もちくまの休日ハント」で遊んだよ！\nスコアは【${state.score}】でした！\n\n#もちくまの休日ハント`;
+  const shareUrl = `https://mochikumas-holiday-hunt.vercel.app/`;
+  window.open(`https://twitter.com/intent/tweet?text=${encodeURIComponent(shareText)}&url=${encodeURIComponent(shareUrl)}`, '_blank');
 });
 </script>
 </body>
